@@ -1,0 +1,28 @@
+{
+  "name": "htcondor-batch-farm",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" },
+    "ghcr.io/devcontainers/features/ruby:1": { "version": "3.3" },
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" },
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+  },
+  "postCreateCommand": "for f in CLAUDE.md PROGRESS.md .claude/; do grep -qxF \"$f\" .git/info/exclude || echo \"$f\" >> .git/info/exclude; done &&([ -f ~/.ssh/batchfarm ] || (mkdir -p ~/.ssh && chmod 700 ~/.ssh && ssh-keygen -t ed25519 -N '' -f ~/.ssh/batchfarm -C batchfarm)) && bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "vox-pupuli.puppet-vscode",
+        "redhat.ansible",
+        "hashicorp.terraform",
+        "ms-python.python"
+      ],
+      "settings": {
+        "terraform.languageServer.enable": true,
+        "[terraform]": { "editor.formatOnSave": true }
+      }
+    }
+  }
+}

@@ -216,3 +216,20 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- htcondor-batch-farm ---
+# OpenTofu
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+# Generated Ansible inventory
+ansible/inventory/generated*
+# Secrets (HTCondor pool key, autosign challenge password, SSH keys)
+data/secrets*
+*.pem
+# Ruby / Python tooling
+vendor/
+.bundle/
+.venv/
