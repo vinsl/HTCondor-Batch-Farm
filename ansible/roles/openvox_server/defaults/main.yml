@@ -1,0 +1,8 @@
+---
+# JVM heap of puppetserver. cm-01 has about 7.5 GiB shared with HTCondor: 2g is enough for a
+# 3-node lab (the package default of 2g would be fine too; it is set explicitly so it is visible
+# and adjustable, which is what "memory tuned" means in the project scope).
+openvox_server_heap: 2g
+openvox_server_package: openvox-server
+openvox_server_service: puppetserver
+openvox_server_sysconfig: /etc/sysconfig/puppetserver

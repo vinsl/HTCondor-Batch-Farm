@@ -1,0 +1,5 @@
+---
+- name: Restart puppetserver
+  ansible.builtin.service:
+    name: "{{ openvox_server_service }}"
+    state: restarted

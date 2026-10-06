@@ -1,0 +1,4 @@
+---
+openvox_bootstrap_agent_package: openvox-agent
+openvox_bootstrap_agent_service: puppet
+openvox_bootstrap_confdir: /etc/puppetlabs/puppet

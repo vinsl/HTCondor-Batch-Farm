@@ -4,14 +4,14 @@
 [central_manager]
 %{ for k, v in nodes ~}
 %{ if v.tags.Role == "central_manager" ~}
-${k} ansible_host=${v.public_ip}
+${k} ansible_host=${v.public_ip} private_ip=${v.private_ip}
 %{ endif ~}
 %{ endfor ~}
 
 [execute]
 %{ for k, v in nodes ~}
 %{ if v.tags.Role == "execute" ~}
-${k} ansible_host=${v.public_ip}
+${k} ansible_host=${v.public_ip} private_ip=${v.private_ip}
 %{ endif ~}
 %{ endfor ~}
 

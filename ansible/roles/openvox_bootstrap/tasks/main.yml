@@ -1,0 +1,93 @@
+---
+# Prepare a node to join the OpenVox fleet. Everything here is idempotent: a second run must
+# report changed=0. The agent is NOT started by a task: the handler starts it at the end of the
+# play, once the configuration and the CSR attributes are in place (and, on the central manager,
+# once the server is up).
+#
+# HOW TO READ THIS FILE (YAML + Ansible, beginner notes)
+#   - YAML nests by INDENTATION (2 spaces, never tabs). A line indented under another belongs to it.
+#   - Each item starting with "- name:" is one TASK. A task is a small block with two levels:
+#
+#       - name: <human sentence>             <- task level (4 columns of a task: name, module, notify, when...)
+#         ansible.builtin.template:          <- the MODULE to run (what to do)
+#           src: x.j2                        <- module level: arguments of the module only
+#           dest: /etc/x
+#         notify: Restart foo                <- back at TASK level: a keyword of the task itself,
+#                                               NOT an argument of the module
+#
+#   - "{{ something }}" inserts the value of a variable (Jinja2 templating).
+#   - state: present / restarted / ... describes the wanted end state, like in Puppet. Ansible
+#     compares with the machine and only acts when they differ ("changed"); otherwise "ok".
+
+- name: Install the OpenVox release package (Vox Pupuli yum repository)
+  ansible.builtin.dnf:
+    name: "{{ openvox_release_url }}"
+    state: present
+    # The release RPM carries the GPG key of the repository, so it cannot be verified before it is
+    # installed. Packages from the repository itself are verified (gpgcheck=1 in the repo file).
+    disable_gpg_check: true
+
+- name: Install the OpenVox agent
+  ansible.builtin.package:
+    name: "{{ openvox_bootstrap_agent_package }}"
+    state: present
+
+- name: Set the hostname to the inventory name
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Keep cloud-init from resetting the hostname at each boot
+  ansible.builtin.copy:
+    dest: /etc/cloud/cloud.cfg.d/99-preserve-hostname.cfg
+    content: |
+      preserve_hostname: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Map every fleet member name to its private address in /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED: batchfarm fleet"
+    block: |
+      {% for host in groups['all'] %}
+      {{ hostvars[host].private_ip }} {{ host }}
+      {% endfor %}
+
+- name: Configure the agent (puppet.conf)
+  ansible.builtin.template:
+    src: puppet.conf.j2
+    dest: "{{ openvox_bootstrap_confdir }}/puppet.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  # Restart the agent when this file changes. The value must match the handler name exactly.
+  notify: Restart puppet agent
+
+# The group must exist before the next task uses it: the agent package does not create it, and the
+# server package (installed later, on the central manager only) reuses it if it already exists.
+- name: Ensure the puppet system group exists
+  ansible.builtin.group:
+    name: puppet
+    system: true
+    state: present
+
+# The CSR attributes are read ONCE, when the agent creates its certificate request. This file
+# must therefore exist before the agent first starts. Changing it afterwards has no effect on
+# an already signed certificate.
+- name: Declare the CSR attributes (role and challenge password)
+  ansible.builtin.template:
+    src: csr_attributes.yaml.j2
+    dest: "{{ openvox_bootstrap_confdir }}/csr_attributes.yaml"
+    owner: root
+    # The "puppet" group (created by the openvox-agent package) must read it: puppetserver runs as
+    # user puppet and reads this file for its OWN certificate request. root:root 0600 made the server
+    # fail to start ("Permission denied"). It contains the challenge password: group read only.
+    group: puppet
+    mode: "0640"
+  no_log: true # the rendered content contains a secret
+
+- name: Enable the agent service at boot (it is started by the handler)
+  ansible.builtin.service:
+    name: "{{ openvox_bootstrap_agent_service }}"
+    enabled: true
