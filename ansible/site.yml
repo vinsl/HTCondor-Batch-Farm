@@ -17,3 +17,16 @@
   become: true
   roles:
     - openvox_bootstrap
+
+# Last: make sure every agent runs, now that the server is up. The handler alone is not enough: if a
+# first run fails before the handler fires, later runs change nothing and the agent never starts
+# (that happened to wn-02). This play is idempotent: ok when the agents already run.
+- name: Every node runs its OpenVox agent
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure the agent service is running and enabled
+      ansible.builtin.service:
+        name: puppet
+        state: started
+        enabled: true
