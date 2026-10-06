@@ -1,0 +1,11 @@
+##### STEP 2: make wn-01 sick (stop chronyd), as an operator would break a service
+chronyd on wn-01: inactive
+NODE_IS_HEALTHY = False
+NODE_HEALTH_REASON = "service chronyd is not active"
+##### collector view 25 s later
+wn-01 true ok Unclaimed
+wn-02 true ok Unclaimed
+##### STEP 3: submit 8 jobs of 25 s while wn-01 is sick
+8 job(s) submitted to cluster 6.
+--- running now, per host:
+      2 wn-02

@@ -1,0 +1,3 @@
+##### result: where did the 8 jobs of cluster 6 finally run? (wn-01 only after it recovered)
+
+      8 wn-02

@@ -8,15 +8,19 @@
 STARTD_CRON_JOBLIST = $(STARTD_CRON_JOBLIST) HEALTH
 
 # TODO(human): the program to run: STARTD_CRON_HEALTH_EXECUTABLE, set to the EPP parameter $script.
-STARTD_CRON_HEALTH_EXECUTABLE =
+STARTD_CRON_HEALTH_EXECUTABLE = <%= $script %>
 
 # Run it again and again: Periodic mode, every 60 seconds.
 STARTD_CRON_HEALTH_MODE = Periodic
 # TODO(human): the interval setting of the job, STARTD_CRON_HEALTH_PERIOD, 60 seconds written "60s".
-STARTD_CRON_HEALTH_PERIOD =
+STARTD_CRON_HEALTH_PERIOD = 60s
+# Without this the startd sends its ad to the collector only every UPDATE_INTERVAL (300 s): a node
+# that becomes sick would stay "healthy" at the central manager for up to 5 minutes. If_Changed sends
+# an update as soon as the output of the check changes.
+STARTD_CRON_AUTOPUBLISH = If_Changed
 
 # START is the expression the startd evaluates for every job it is offered. $(START) keeps whatever
 # was already defined. The "=?=" operator is "is identical to": unlike "==", an attribute that does
 # not exist yet (before the first run of the health check) compares as false instead of undefined.
 # TODO(human): accept a job only if the previous START is true AND NODE_IS_HEALTHY =?= True.
-START =
+START = ($(START)) && (NODE_IS_HEALTHY=?=True) 

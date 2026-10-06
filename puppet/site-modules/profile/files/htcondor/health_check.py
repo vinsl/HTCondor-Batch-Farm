@@ -9,6 +9,7 @@ so the central manager and the START expression can use them. Contract of a star
 A node is healthy only if every check passes. Checks are plain functions so they can be tested
 without a real machine (see tests/health_check/test_health_check.py).
 """
+
 import shutil
 import subprocess
 import sys
@@ -24,7 +25,8 @@ def disk_ok(path: str, min_free_ratio: float) -> bool:
     TODO(human): shutil.disk_usage(path) returns a named tuple (total, used, free), in bytes.
     Compare free / total with min_free_ratio. A ratio exactly equal to the minimum is acceptable.
     """
-    raise NotImplementedError
+    usage = shutil.disk_usage(path)
+    return usage.free / usage.total >= min_free_ratio
 
 
 def service_active(name: str) -> bool:
@@ -34,7 +36,11 @@ def service_active(name: str) -> bool:
     (0 means active). Do not parse the text output. Do not let the command print on the terminal:
     capture the output (capture_output=True). Do not use shell=True.
     """
-    raise NotImplementedError
+    result = subprocess.run(
+        ["systemctl", "is-active", name], capture_output=True, check=False
+    )
+
+    return result.returncode == 0
 
 
 def evaluate() -> tuple[bool, str]:
@@ -46,7 +52,12 @@ def evaluate() -> tuple[bool, str]:
     TODO(human): call disk_ok(DISK_PATH, MIN_FREE_RATIO), then service_active for every service of
     CRITICAL_SERVICES. Return as soon as one check fails.
     """
-    raise NotImplementedError
+    if disk_ok(DISK_PATH, MIN_FREE_RATIO) == False:
+        return False, f"disk below {MIN_FREE_RATIO:.0%} free"
+    for service in CRITICAL_SERVICES:
+        if service_active(service) == False:
+            return False, f"service {service} is not active"
+    return True, "ok"
 
 
 def format_classad(healthy: bool, reason: str) -> str:
@@ -59,7 +70,17 @@ def format_classad(healthy: bool, reason: str) -> str:
 
     TODO(human): build the two lines.
     """
-    raise NotImplementedError
+    classAd = (
+        "NODE_IS_HEALTHY = "
+        + str(healthy)
+        + "\n"
+        + "NODE_HEALTH_REASON = "
+        + '"'
+        + reason
+        + '"'
+        + "\n"
+    )
+    return classAd
 
 
 def main() -> int:

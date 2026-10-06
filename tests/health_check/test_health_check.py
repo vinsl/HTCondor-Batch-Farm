@@ -1,4 +1,5 @@
 """Tests of the health check. Nothing here touches the real disk or systemd: both are replaced."""
+
 import importlib.util
 import pathlib
 from types import SimpleNamespace
@@ -32,7 +33,9 @@ def test_disk_exactly_at_the_minimum_is_ok(monkeypatch):
 
 
 def fake_run(returncode):
-    return lambda *args, **kwargs: SimpleNamespace(returncode=returncode, stdout=b"", stderr=b"")
+    return lambda *args, **kwargs: SimpleNamespace(
+        returncode=returncode, stdout=b"", stderr=b""
+    )
 
 
 def test_service_active_when_systemctl_returns_zero(monkeypatch):
@@ -66,9 +69,15 @@ def test_evaluate_reports_the_failed_service(monkeypatch):
 
 
 def test_classad_for_a_healthy_node():
-    assert hc.format_classad(True, "ok") == 'NODE_IS_HEALTHY = True\nNODE_HEALTH_REASON = "ok"\n'
+    assert (
+        hc.format_classad(True, "ok")
+        == 'NODE_IS_HEALTHY = True\nNODE_HEALTH_REASON = "ok"\n'
+    )
 
 
 def test_classad_for_a_sick_node():
     out = hc.format_classad(False, "service chronyd is not active")
-    assert out == 'NODE_IS_HEALTHY = False\nNODE_HEALTH_REASON = "service chronyd is not active"\n'
+    assert (
+        out
+        == 'NODE_IS_HEALTHY = False\nNODE_HEALTH_REASON = "service chronyd is not active"\n'
+    )

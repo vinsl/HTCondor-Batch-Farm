@@ -41,9 +41,12 @@ class profile::htcondor::execute {
     mode    => '0644',
     # TODO(human): render profile/htcondor/startd_cron.conf.epp, passing the path of the script.
     # The template declares one parameter, named script; the value is the variable $health_script.
-    content => '',
+    content => epp('profile/htcondor/startd_cron.conf.epp', { 'script' => $health_script }),
+
     # TODO(human): two relations are needed. The program must exist BEFORE this config points
     # to it (a relation towards File[$health_script], a variable: no quotes), and condor must pick
     # up the new configuration when this file changes (towards Service['condor']).
+    require => File[$health_script],
+    notify  => Service['condor'],
   }
 }
