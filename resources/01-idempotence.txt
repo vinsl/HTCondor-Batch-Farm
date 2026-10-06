@@ -1,0 +1,16 @@
+# Ansible, full playbook, run twice
+--- ansible-playbook site.yml (run 1)
+PLAY RECAP *********************************************************************
+cm-01 : ok=17 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0 
+wn-01 : ok=10 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0 
+wn-02 : ok=10 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0 
+--- ansible-playbook site.yml (run 2)
+PLAY RECAP *********************************************************************
+cm-01 : ok=17 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0 
+wn-01 : ok=10 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0 
+wn-02 : ok=10 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0 
+
+# Puppet agent, run on each node (exit 0 = no change, 2 = changes applied)
+cm-01 -> exit=0
+wn-01 -> exit=0
+wn-02 -> exit=0

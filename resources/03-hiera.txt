@@ -1,0 +1,15 @@
+# Data files, from the most specific level to the least specific (see puppet/hiera.yaml)
+--- puppet/data/roles/central_manager.yaml
+---
+profile::base::firewall_ports:
+  - 8140
+  - 9618
+--- puppet/data/common.yaml (profile::base::firewall_ports only)
+profile::base::firewall_ports:
+  - 9618
+
+
+# Result applied on each node by profile::base (permanent firewalld ports)
+cm-01: 8140/tcp 9618/tcp
+wn-01: 9618/tcp
+wn-02: 9618/tcp

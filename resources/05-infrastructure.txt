@@ -1,0 +1,8 @@
+No changes. Your infrastructure matches the configuration.
+
+# Versions
+OpenTofu v1.13.1
+ansible [core 2.21.4]
+openvox-server-8.16.0-1.el9.noarch
+openvox-agent-8.29.0-1.el9.x86_64
+condor-25.0.14-1.el9.x86_64
