@@ -1,0 +1,914 @@
+{
+  "milestone": "01-htcondor-pool",
+  "description": "First working pool: three AlmaLinux 9 nodes provisioned by OpenTofu, bootstrapped by Ansible, converged by OpenVox (roles, profiles, Hiera) into an HTCondor 25.0 pool with a self-exclusion health check.",
+  "captured_at": "2026-10-06T19:51:09+00:00",
+  "git": {
+    "commit": "65a28e6",
+    "branch": "feat/phase2-puppet",
+    "uncommitted_changes": false
+  },
+  "infrastructure": {
+    "machines": [
+      {
+        "name": "cm-01",
+        "role": "central_manager",
+        "instance_type": "m7i-flex.large",
+        "availability_zone": "eu-west-3a",
+        "private_ip": "10.0.1.195",
+        "has_public_ip": true,
+        "root_volume": {
+          "size_gib": 20,
+          "type": "gp3",
+          "encrypted": true
+        },
+        "imdsv2_required": true,
+        "key_pair": "batchfarm"
+      },
+      {
+        "name": "wn-01",
+        "role": "execute",
+        "instance_type": "t3.small",
+        "availability_zone": "eu-west-3a",
+        "private_ip": "10.0.1.199",
+        "has_public_ip": true,
+        "root_volume": {
+          "size_gib": 20,
+          "type": "gp3",
+          "encrypted": true
+        },
+        "imdsv2_required": true,
+        "key_pair": "batchfarm"
+      },
+      {
+        "name": "wn-02",
+        "role": "execute",
+        "instance_type": "t3.small",
+        "availability_zone": "eu-west-3a",
+        "private_ip": "10.0.1.231",
+        "has_public_ip": true,
+        "root_volume": {
+          "size_gib": 20,
+          "type": "gp3",
+          "encrypted": true
+        },
+        "imdsv2_required": true,
+        "key_pair": "batchfarm"
+      }
+    ],
+    "security_group_rules": [
+      {
+        "direction": "outbound",
+        "description": "Outbound: package repositories, DNS, NTP",
+        "protocol": "-1",
+        "ports": null,
+        "peer": "anywhere (0.0.0.0/0)"
+      },
+      {
+        "direction": "inbound",
+        "description": "HTCondor daemons (collector, shared port)",
+        "protocol": "tcp",
+        "ports": "9618-9618",
+        "peer": "members of batchfarm-cluster"
+      },
+      {
+        "direction": "inbound",
+        "description": "OpenVox agent to server (catalog requests)",
+        "protocol": "tcp",
+        "ports": "8140-8140",
+        "peer": "members of batchfarm-cluster"
+      },
+      {
+        "direction": "inbound",
+        "description": "SSH from the Codespace",
+        "protocol": "tcp",
+        "ports": "22-22",
+        "peer": "admin workstation (single /32)"
+      }
+    ],
+    "network": {
+      "internet_gateway": true,
+      "routes": [
+        "0.0.0.0/0"
+      ],
+      "subnet": {
+        "cidr": "10.0.1.0/24",
+        "availability_zone": "eu-west-3a",
+        "public_ip_on_launch": true
+      },
+      "vpc_cidr": "10.0.0.0/16"
+    },
+    "image": {
+      "name": "AlmaLinux OS 9.8.20261005 x86_64",
+      "owner": "764336703387",
+      "architecture": "x86_64"
+    },
+    "key_pair": "batchfarm",
+    "region": "eu-west-3"
+  },
+  "nodes": {
+    "cm-01": {
+      "system": {
+        "hostname": "cm-01",
+        "os": "AlmaLinux 9.8 (Olive Jaguar)",
+        "kernel": "5.14.0-687.53.1.el9_8.x86_64",
+        "arch": "x86_64",
+        "cpus": 2,
+        "memory_mib": 7519,
+        "root_disk_gib": 18.7,
+        "root_disk_free_pct": 89.4,
+        "selinux": "Enforcing",
+        "uptime": "up 8 hours, 6 minutes",
+        "private_ipv4": [
+          "10.0.1.195"
+        ],
+        "etc_hosts_fleet": [
+          "10.0.1.195 cm-01",
+          "10.0.1.199 wn-01",
+          "10.0.1.231 wn-02"
+        ]
+      },
+      "services": {
+        "sshd": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:06:11 UTC"
+        },
+        "chronyd": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:06:11 UTC"
+        },
+        "firewalld": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:06:14 UTC"
+        },
+        "puppet": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 14:12:06 UTC"
+        },
+        "puppetserver": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 14:12:11 UTC"
+        },
+        "condor": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 17:25:54 UTC"
+        }
+      },
+      "network": {
+        "listening_tcp": [
+          {
+            "port": 22,
+            "process": "sshd:",
+            "addresses": [
+              "0.0.0.0",
+              "[::]"
+            ]
+          },
+          {
+            "port": 111,
+            "process": "rpcbind",
+            "addresses": [
+              "0.0.0.0",
+              "[::]"
+            ]
+          },
+          {
+            "port": 1027,
+            "process": "condor_schedd",
+            "addresses": [
+              "0.0.0.0"
+            ]
+          },
+          {
+            "port": 1699,
+            "process": "condor_collector",
+            "addresses": [
+              "0.0.0.0"
+            ]
+          },
+          {
+            "port": 8140,
+            "process": "java",
+            "addresses": [
+              "*"
+            ]
+          },
+          {
+            "port": 9618,
+            "process": "condor_shared_port",
+            "addresses": [
+              "0.0.0.0"
+            ]
+          },
+          {
+            "port": 19871,
+            "process": "condor_schedd",
+            "addresses": [
+              "0.0.0.0"
+            ]
+          },
+          {
+            "port": 30965,
+            "process": "condor_collector",
+            "addresses": [
+              "0.0.0.0"
+            ]
+          }
+        ],
+        "firewall": {
+          "zone": "public",
+          "services": [
+            "cockpit",
+            "dhcpv6-client",
+            "ssh"
+          ],
+          "ports": [
+            "8140/tcp",
+            "9618/tcp"
+          ]
+        }
+      },
+      "packages": {
+        "openvox-agent": "8.29.0-1.el9",
+        "openvox-server": "8.16.0-1.el9",
+        "openvox8-release": "1-1.el9",
+        "condor": "25.0.14-1.el9",
+        "htcondor-release": "25.0-1.el9",
+        "epel-release": "9-9.el9",
+        "chrony": "4.8-1.el9",
+        "firewalld": "1.3.4-20.el9_8",
+        "python3": "3.9.25-7.el9_8.3"
+      },
+      "puppet": {
+        "certname": "cm-01",
+        "server": {
+          "signed_certificates": {
+            "cm-01": {
+              "pp_role": "central_manager",
+              "issuer": "CN=Puppet CA: cm-01",
+              "not_after": "Oct  5 14:12:10 2031 GMT",
+              "alt_names": "DNS:puppet, DNS:cm-01",
+              "contains_challenge_password": false
+            },
+            "wn-01": {
+              "pp_role": "execute",
+              "issuer": "CN=Puppet CA: cm-01",
+              "not_after": "Oct  5 14:12:37 2031 GMT",
+              "alt_names": "DNS:wn-01",
+              "contains_challenge_password": false
+            },
+            "wn-02": {
+              "pp_role": "execute",
+              "issuer": "CN=Puppet CA: cm-01",
+              "not_after": "Oct  5 14:12:47 2031 GMT",
+              "alt_names": "DNS:wn-02",
+              "contains_challenge_password": false
+            }
+          },
+          "pending_requests": [],
+          "autosign": "/etc/puppetlabs/puppet/autosign.sh",
+          "java_args": "JAVA_ARGS=\"-Xms2g -Xmx2g\"",
+          "environments": [
+            "production"
+          ],
+          "hiera_hierarchy": [
+            {
+              "name": "Secrets (not committed)",
+              "path": "secrets.yaml"
+            },
+            {
+              "name": "Per-node data",
+              "path": "nodes/%{trusted.certname}.yaml"
+            },
+            {
+              "name": "Per-role data",
+              "path": "roles/%{trusted.extensions.pp_role}.yaml"
+            },
+            {
+              "name": "Common data",
+              "path": "common.yaml"
+            }
+          ],
+          "hiera_data_files": [
+            "data/common.yaml",
+            "data/roles/central_manager.yaml",
+            "data/roles/execute.yaml",
+            "data/secrets.yaml"
+          ]
+        },
+        "environment": "production",
+        "runinterval_s": "1800",
+        "certificate": {
+          "pp_role": "central_manager",
+          "issuer": "CN=Puppet CA: cm-01",
+          "not_after": "Oct  5 14:12:10 2031 GMT",
+          "alt_names": "DNS:puppet, DNS:cm-01",
+          "contains_challenge_password": false
+        },
+        "last_run": {
+          "at": "2026-10-06T19:42:09+00:00",
+          "duration_s": 1.54,
+          "config_version": 1791315728,
+          "puppet_version": "8.29.0",
+          "resources": {
+            "changed": 0,
+            "corrective_change": 0,
+            "failed": 0,
+            "failed_to_restart": 0,
+            "out_of_sync": 0,
+            "restarted": 0,
+            "scheduled": 0,
+            "skipped": 0,
+            "total": 29
+          },
+          "changes": 0,
+          "events": {
+            "failure": 0,
+            "success": 0,
+            "total": 0
+          }
+        },
+        "classes": [
+          "profile::base",
+          "profile::htcondor",
+          "profile::htcondor::central_manager",
+          "profile::htcondor::submit",
+          "role::central_manager"
+        ],
+        "resources": [
+          "exec[firewalld-open-8140]",
+          "exec[firewalld-open-9618]",
+          "exec[firewalld-reload]",
+          "exec[htcondor-daemon-token]",
+          "exec[htcondor-pool-key]",
+          "file[/etc/chrony.conf]",
+          "file[/etc/condor/config.d/10-common.conf]",
+          "file[/etc/condor/config.d/20-role.conf]",
+          "file[/etc/condor/config.d/30-submit.conf]",
+          "file[/etc/ssh/sshd_config.d/60-hardening.conf]",
+          "package[bind-utils]",
+          "package[chrony]",
+          "package[condor]",
+          "package[epel-release]",
+          "package[firewalld]",
+          "package[lsof]",
+          "package[vim-enhanced]",
+          "service[chronyd]",
+          "service[condor]",
+          "service[firewalld]",
+          "service[sshd]",
+          "yumrepo[htcondor]"
+        ],
+        "resource_counts": {
+          "exec": 5,
+          "file": 5,
+          "package": 7,
+          "service": 4,
+          "yumrepo": 1
+        }
+      },
+      "htcondor": {
+        "version": "$CondorVersion: 25.0.14 2026-08-30 BuildID: 947353 PackageID: 25.0.14-1 $",
+        "config": {
+          "DAEMON_LIST": "MASTER COLLECTOR NEGOTIATOR SCHEDD",
+          "CONDOR_HOST": "cm-01",
+          "TRUST_DOMAIN": "cm-01",
+          "START": "True",
+          "STARTD_CRON_JOBLIST": null,
+          "STARTD_CRON_HEALTH_EXECUTABLE": null,
+          "STARTD_CRON_HEALTH_PERIOD": null,
+          "STARTD_CRON_AUTOPUBLISH": null,
+          "SEC_DEFAULT_AUTHENTICATION_METHODS": "FS,IDTOKENS,KERBEROS,SCITOKENS,SSL",
+          "USE_SHARED_PORT": "true"
+        },
+        "running_daemons": [
+          "condor_collector",
+          "condor_master",
+          "condor_negotiator",
+          "condor_procd",
+          "condor_schedd",
+          "condor_shared_port"
+        ],
+        "config_files": [
+          "00-security",
+          "10-common.conf",
+          "10-stash-plugin.conf",
+          "20-role.conf",
+          "30-submit.conf"
+        ],
+        "pool_key_present": true,
+        "daemon_tokens": [
+          "condor@cm-01"
+        ],
+        "pool_slots": [
+          {
+            "Name": "slot1@wn-01",
+            "Machine": "wn-01",
+            "SlotType": "Partitionable",
+            "State": "Unclaimed",
+            "Activity": "Idle",
+            "Cpus": 2,
+            "Memory": 1649,
+            "TotalCpus": 2.0,
+            "TotalMemory": 1649,
+            "OpSys": "LINUX",
+            "Arch": "X86_64",
+            "NODE_IS_HEALTHY": true,
+            "NODE_HEALTH_REASON": "ok",
+            "LoadAvg": 0.04
+          },
+          {
+            "Name": "slot1@wn-02",
+            "Machine": "wn-02",
+            "SlotType": "Partitionable",
+            "State": "Unclaimed",
+            "Activity": "Idle",
+            "Cpus": 2,
+            "Memory": 1649,
+            "TotalCpus": 2.0,
+            "TotalMemory": 1649,
+            "OpSys": "LINUX",
+            "Arch": "X86_64",
+            "NODE_IS_HEALTHY": true,
+            "NODE_HEALTH_REASON": "ok",
+            "LoadAvg": 0.04
+          }
+        ],
+        "pool_daemons": [
+          [
+            "Collector",
+            "My Pool - cm-01@cm-01"
+          ],
+          [
+            "Scheduler",
+            "cm-01"
+          ],
+          [
+            "DaemonMaster",
+            "cm-01"
+          ],
+          [
+            "Negotiator",
+            "cm-01"
+          ],
+          [
+            "Submitter",
+            "ec2-user@cm-01"
+          ],
+          [
+            "Accounting",
+            "<none>"
+          ],
+          [
+            "Machine",
+            "slot1@wn-01"
+          ],
+          [
+            "StartD",
+            "wn-01"
+          ],
+          [
+            "DaemonMaster",
+            "wn-01"
+          ],
+          [
+            "Machine",
+            "slot1@wn-02"
+          ],
+          [
+            "StartD",
+            "wn-02"
+          ],
+          [
+            "DaemonMaster",
+            "wn-02"
+          ]
+        ],
+        "queue": {},
+        "history": {
+          "by_status": {
+            "completed": 37,
+            "removed": 2
+          },
+          "completed_by_host": {
+            "wn-02": 20,
+            "wn-01": 17
+          },
+          "first_completion": "2026-10-06T17:28:21+00:00",
+          "last_completion": "2026-10-06T19:11:37+00:00"
+        }
+      }
+    },
+    "wn-01": {
+      "system": {
+        "hostname": "wn-01",
+        "os": "AlmaLinux 9.8 (Olive Jaguar)",
+        "kernel": "5.14.0-687.53.1.el9_8.x86_64",
+        "arch": "x86_64",
+        "cpus": 2,
+        "memory_mib": 1649,
+        "root_disk_gib": 18.7,
+        "root_disk_free_pct": 91.0,
+        "selinux": "Enforcing",
+        "uptime": "up 8 hours, 7 minutes",
+        "private_ipv4": [
+          "10.0.1.199"
+        ],
+        "etc_hosts_fleet": [
+          "10.0.1.195 cm-01",
+          "10.0.1.199 wn-01",
+          "10.0.1.231 wn-02"
+        ]
+      },
+      "services": {
+        "sshd": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:05:18 UTC"
+        },
+        "chronyd": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 19:08:57 UTC"
+        },
+        "firewalld": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:05:22 UTC"
+        },
+        "puppet": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 13:12:31 UTC"
+        },
+        "condor": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 19:05:50 UTC"
+        }
+      },
+      "network": {
+        "listening_tcp": [
+          {
+            "port": 22,
+            "process": "sshd:",
+            "addresses": [
+              "0.0.0.0",
+              "[::]"
+            ]
+          },
+          {
+            "port": 111,
+            "process": "rpcbind",
+            "addresses": [
+              "0.0.0.0",
+              "[::]"
+            ]
+          },
+          {
+            "port": 9618,
+            "process": "condor_shared_port",
+            "addresses": [
+              "0.0.0.0"
+            ]
+          }
+        ],
+        "firewall": {
+          "zone": "public",
+          "services": [
+            "cockpit",
+            "dhcpv6-client",
+            "ssh"
+          ],
+          "ports": [
+            "9618/tcp"
+          ]
+        }
+      },
+      "packages": {
+        "openvox-agent": "8.29.0-1.el9",
+        "openvox8-release": "1-1.el9",
+        "condor": "25.0.14-1.el9",
+        "epel-release": "9-9.el9",
+        "chrony": "4.8-1.el9",
+        "firewalld": "1.3.4-20.el9_8",
+        "python3": "3.9.25-7.el9_8.3"
+      },
+      "puppet": {
+        "certname": "wn-01",
+        "server": "cm-01",
+        "environment": "production",
+        "runinterval_s": "1800",
+        "certificate": {
+          "pp_role": "execute",
+          "issuer": "CN=Puppet CA: cm-01",
+          "not_after": "Oct  5 14:12:37 2031 GMT",
+          "alt_names": "DNS:wn-01",
+          "contains_challenge_password": false
+        },
+        "last_run": {
+          "at": "2026-10-06T19:42:42+00:00",
+          "duration_s": 2.3,
+          "config_version": 1791315760,
+          "puppet_version": "8.29.0",
+          "resources": {
+            "changed": 0,
+            "corrective_change": 0,
+            "failed": 0,
+            "failed_to_restart": 0,
+            "out_of_sync": 0,
+            "restarted": 0,
+            "scheduled": 0,
+            "skipped": 0,
+            "total": 31
+          },
+          "changes": 0,
+          "events": {
+            "failure": 0,
+            "success": 0,
+            "total": 0
+          }
+        },
+        "classes": [
+          "profile::base",
+          "profile::htcondor",
+          "profile::htcondor::execute",
+          "role::execute"
+        ],
+        "resources": [
+          "exec[firewalld-open-9618]",
+          "exec[firewalld-reload]",
+          "exec[htcondor-daemon-token]",
+          "exec[htcondor-pool-key]",
+          "file[/etc/chrony.conf]",
+          "file[/etc/condor/config.d/10-common.conf]",
+          "file[/etc/condor/config.d/20-role.conf]",
+          "file[/etc/condor/config.d/40-health.conf]",
+          "file[/etc/ssh/sshd_config.d/60-hardening.conf]",
+          "file[/usr/local/libexec/condor/health_check.py]",
+          "file[/usr/local/libexec/condor]",
+          "file[/usr/local/libexec]",
+          "package[bind-utils]",
+          "package[chrony]",
+          "package[condor]",
+          "package[epel-release]",
+          "package[firewalld]",
+          "package[lsof]",
+          "package[vim-enhanced]",
+          "service[chronyd]",
+          "service[condor]",
+          "service[firewalld]",
+          "service[sshd]",
+          "yumrepo[htcondor]"
+        ],
+        "resource_counts": {
+          "exec": 4,
+          "file": 8,
+          "package": 7,
+          "service": 4,
+          "yumrepo": 1
+        }
+      },
+      "htcondor": {
+        "version": "$CondorVersion: 25.0.14 2026-08-30 BuildID: 947353 PackageID: 25.0.14-1 $",
+        "config": {
+          "DAEMON_LIST": "MASTER STARTD",
+          "CONDOR_HOST": "cm-01",
+          "TRUST_DOMAIN": "cm-01",
+          "START": "(True) && (NODE_IS_HEALTHY=?=True)",
+          "STARTD_CRON_JOBLIST": "HEALTH",
+          "STARTD_CRON_HEALTH_EXECUTABLE": "/usr/local/libexec/condor/health_check.py",
+          "STARTD_CRON_HEALTH_PERIOD": "60s",
+          "STARTD_CRON_AUTOPUBLISH": "If_Changed",
+          "SEC_DEFAULT_AUTHENTICATION_METHODS": "FS,IDTOKENS,KERBEROS,SCITOKENS,SSL",
+          "USE_SHARED_PORT": "true"
+        },
+        "running_daemons": [
+          "condor_master",
+          "condor_procd",
+          "condor_shared_port",
+          "condor_startd"
+        ],
+        "config_files": [
+          "00-security",
+          "10-common.conf",
+          "10-stash-plugin.conf",
+          "20-role.conf",
+          "40-health.conf"
+        ],
+        "pool_key_present": true,
+        "daemon_tokens": [
+          "condor@cm-01"
+        ]
+      }
+    },
+    "wn-02": {
+      "system": {
+        "hostname": "wn-02",
+        "os": "AlmaLinux 9.8 (Olive Jaguar)",
+        "kernel": "5.14.0-687.53.1.el9_8.x86_64",
+        "arch": "x86_64",
+        "cpus": 2,
+        "memory_mib": 1649,
+        "root_disk_gib": 18.7,
+        "root_disk_free_pct": 91.0,
+        "selinux": "Enforcing",
+        "uptime": "up 8 hours, 7 minutes",
+        "private_ipv4": [
+          "10.0.1.231"
+        ],
+        "etc_hosts_fleet": [
+          "10.0.1.195 cm-01",
+          "10.0.1.199 wn-01",
+          "10.0.1.231 wn-02"
+        ]
+      },
+      "services": {
+        "sshd": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:05:50 UTC"
+        },
+        "chronyd": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:05:50 UTC"
+        },
+        "firewalld": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 16:05:54 UTC"
+        },
+        "puppet": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 19:47:47 UTC"
+        },
+        "condor": {
+          "enabled": "enabled",
+          "active": "active",
+          "since": "Tue 2026-10-06 19:05:55 UTC"
+        }
+      },
+      "network": {
+        "listening_tcp": [
+          {
+            "port": 22,
+            "process": "sshd:",
+            "addresses": [
+              "0.0.0.0",
+              "[::]"
+            ]
+          },
+          {
+            "port": 111,
+            "process": "rpcbind",
+            "addresses": [
+              "0.0.0.0",
+              "[::]"
+            ]
+          },
+          {
+            "port": 9618,
+            "process": "condor_shared_port",
+            "addresses": [
+              "0.0.0.0"
+            ]
+          }
+        ],
+        "firewall": {
+          "zone": "public",
+          "services": [
+            "cockpit",
+            "dhcpv6-client",
+            "ssh"
+          ],
+          "ports": [
+            "9618/tcp"
+          ]
+        }
+      },
+      "packages": {
+        "openvox-agent": "8.29.0-1.el9",
+        "openvox8-release": "1-1.el9",
+        "condor": "25.0.14-1.el9",
+        "epel-release": "9-9.el9",
+        "chrony": "4.8-1.el9",
+        "firewalld": "1.3.4-20.el9_8",
+        "python3": "3.9.25-7.el9_8.3"
+      },
+      "puppet": {
+        "certname": "wn-02",
+        "server": "cm-01",
+        "environment": "production",
+        "runinterval_s": "1800",
+        "certificate": {
+          "pp_role": "execute",
+          "issuer": "CN=Puppet CA: cm-01",
+          "not_after": "Oct  5 14:12:47 2031 GMT",
+          "alt_names": "DNS:wn-02",
+          "contains_challenge_password": false
+        },
+        "last_run": {
+          "at": "2026-10-06T19:47:51+00:00",
+          "duration_s": 2.43,
+          "config_version": 1791316070,
+          "puppet_version": "8.29.0",
+          "resources": {
+            "changed": 0,
+            "corrective_change": 0,
+            "failed": 0,
+            "failed_to_restart": 0,
+            "out_of_sync": 0,
+            "restarted": 0,
+            "scheduled": 0,
+            "skipped": 0,
+            "total": 31
+          },
+          "changes": 0,
+          "events": {
+            "failure": 0,
+            "success": 0,
+            "total": 0
+          }
+        },
+        "classes": [
+          "profile::base",
+          "profile::htcondor",
+          "profile::htcondor::execute",
+          "role::execute"
+        ],
+        "resources": [
+          "exec[firewalld-open-9618]",
+          "exec[firewalld-reload]",
+          "exec[htcondor-daemon-token]",
+          "exec[htcondor-pool-key]",
+          "file[/etc/chrony.conf]",
+          "file[/etc/condor/config.d/10-common.conf]",
+          "file[/etc/condor/config.d/20-role.conf]",
+          "file[/etc/condor/config.d/40-health.conf]",
+          "file[/etc/ssh/sshd_config.d/60-hardening.conf]",
+          "file[/usr/local/libexec/condor/health_check.py]",
+          "file[/usr/local/libexec/condor]",
+          "file[/usr/local/libexec]",
+          "package[bind-utils]",
+          "package[chrony]",
+          "package[condor]",
+          "package[epel-release]",
+          "package[firewalld]",
+          "package[lsof]",
+          "package[vim-enhanced]",
+          "service[chronyd]",
+          "service[condor]",
+          "service[firewalld]",
+          "service[sshd]",
+          "yumrepo[htcondor]"
+        ],
+        "resource_counts": {
+          "exec": 4,
+          "file": 8,
+          "package": 7,
+          "service": 4,
+          "yumrepo": 1
+        }
+      },
+      "htcondor": {
+        "version": "$CondorVersion: 25.0.14 2026-08-30 BuildID: 947353 PackageID: 25.0.14-1 $",
+        "config": {
+          "DAEMON_LIST": "MASTER STARTD",
+          "CONDOR_HOST": "cm-01",
+          "TRUST_DOMAIN": "cm-01",
+          "START": "(True) && (NODE_IS_HEALTHY=?=True)",
+          "STARTD_CRON_JOBLIST": "HEALTH",
+          "STARTD_CRON_HEALTH_EXECUTABLE": "/usr/local/libexec/condor/health_check.py",
+          "STARTD_CRON_HEALTH_PERIOD": "60s",
+          "STARTD_CRON_AUTOPUBLISH": "If_Changed",
+          "SEC_DEFAULT_AUTHENTICATION_METHODS": "FS,IDTOKENS,KERBEROS,SCITOKENS,SSL",
+          "USE_SHARED_PORT": "true"
+        },
+        "running_daemons": [
+          "condor_master",
+          "condor_procd",
+          "condor_shared_port",
+          "condor_startd"
+        ],
+        "config_files": [
+          "00-security",
+          "10-common.conf",
+          "10-stash-plugin.conf",
+          "20-role.conf",
+          "40-health.conf"
+        ],
+        "pool_key_present": true,
+        "daemon_tokens": [
+          "condor@cm-01"
+        ]
+      }
+    }
+  }
+}
