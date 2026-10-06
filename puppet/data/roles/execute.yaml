@@ -1,0 +1,3 @@
+---
+# Nothing specific yet: execute nodes use the common values. Role-specific HTCondor data will go here.
+{}

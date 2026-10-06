@@ -1,0 +1,32 @@
+---
+# Hiera 5 configuration of the environment. Hiera is the data layer: the CODE (profiles) describes
+# the structure, the DATA (these YAML files) provides the values, and it can differ per node or role.
+#
+# How a lookup works: for a key such as profile::base::firewall_ports, Hiera reads the levels below
+# from top to bottom and returns the value of the FIRST file that defines the key.
+# That is the "most specific wins" rule: node, then role, then common.
+#
+# The paths contain variables written %{...}. Hiera knows $trusted (built from the certificate):
+#   %{trusted.certname}              -> the certname, for example wn-01
+#   %{trusted.extensions.pp_role}    -> the role from the certificate, for example execute
+# datadir is relative to the directory containing this file.
+
+version: 5
+
+defaults:
+  datadir: data
+  data_hash: yaml_data
+
+hierarchy:
+  - name: "Per-node data"
+    # TODO(human): the file of this node, in the nodes/ directory, named after its certname.
+    path: "nodes/%{trusted.certname}.yaml"
+
+  - name: "Per-role data"
+    # TODO(human): the file of this node's role, in the roles/ directory, named after the role
+    # extension of the certificate.
+    path: "roles/%{trusted.extensions.pp_role}.yaml"
+
+  - name: "Common data"
+    # TODO(human): the file valid for every node, named common.yaml, at the root of datadir.
+    path: "common.yaml"
