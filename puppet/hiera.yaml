@@ -18,15 +18,16 @@ defaults:
   data_hash: yaml_data
 
 hierarchy:
+  # Secrets first: written on the server by Ansible from files kept outside the repository
+  # (puppet/data/secrets*.yaml is git-ignored). A missing file is simply skipped by Hiera.
+  - name: "Secrets (not committed)"
+    path: "secrets.yaml"
+
   - name: "Per-node data"
-    # TODO(human): the file of this node, in the nodes/ directory, named after its certname.
     path: "nodes/%{trusted.certname}.yaml"
 
   - name: "Per-role data"
-    # TODO(human): the file of this node's role, in the roles/ directory, named after the role
-    # extension of the certificate.
     path: "roles/%{trusted.extensions.pp_role}.yaml"
 
   - name: "Common data"
-    # TODO(human): the file valid for every node, named common.yaml, at the root of datadir.
     path: "common.yaml"

@@ -233,3 +233,6 @@ data/secrets*
 vendor/
 .bundle/
 .venv/
+
+# Hiera secrets deployed by Ansible, never committed (the root-anchored data/secrets* above does not match puppet/data/)
+puppet/data/secrets*

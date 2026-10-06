@@ -1,0 +1,9 @@
+# Submit description file: one short job. Submit with: condor_submit hello.sub
+executable     = hello.sh
+arguments      = 5
+output         = out/hello.$(Cluster).$(Process).out
+error          = out/hello.$(Cluster).$(Process).err
+log            = out/hello.log
+request_cpus   = 1
+request_memory = 64
+queue

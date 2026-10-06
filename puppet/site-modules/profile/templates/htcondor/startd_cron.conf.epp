@@ -1,0 +1,22 @@
+<%- | String $script | -%>
+# Managed by Puppet (profile::htcondor::execute). Health check of an execute node.
+#
+# STARTD_CRON runs small programs next to the startd and merges what they print (ClassAd attributes)
+# into the machine ClassAd. The central manager and the START expression can then use them.
+#
+# HEALTH is the name of the job; the settings below carry that name in the middle.
+STARTD_CRON_JOBLIST = $(STARTD_CRON_JOBLIST) HEALTH
+
+# TODO(human): the program to run: STARTD_CRON_HEALTH_EXECUTABLE, set to the EPP parameter $script.
+STARTD_CRON_HEALTH_EXECUTABLE =
+
+# Run it again and again: Periodic mode, every 60 seconds.
+STARTD_CRON_HEALTH_MODE = Periodic
+# TODO(human): the interval setting of the job, STARTD_CRON_HEALTH_PERIOD, 60 seconds written "60s".
+STARTD_CRON_HEALTH_PERIOD =
+
+# START is the expression the startd evaluates for every job it is offered. $(START) keeps whatever
+# was already defined. The "=?=" operator is "is identical to": unlike "==", an attribute that does
+# not exist yet (before the first run of the health check) compares as false instead of undefined.
+# TODO(human): accept a job only if the previous START is true AND NODE_IS_HEALTHY =?= True.
+START =

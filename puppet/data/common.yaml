@@ -8,3 +8,6 @@ profile::base::firewall_ports:
 
 # NTP servers used by chrony.
 profile::base::ntp_pool: 2.almalinux.pool.ntp.org
+
+# HTCondor: name of the machine running the collector and the negotiator (the central manager).
+profile::htcondor::condor_host: cm-01

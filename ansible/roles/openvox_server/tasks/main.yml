@@ -54,6 +54,16 @@
     mode: "0644"
     directory_mode: "0755"
 
+# Written AFTER the code copy, in the same environment: Hiera reads it as the top level.
+- name: Write the Hiera secrets file (HTCondor pool key)
+  ansible.builtin.template:
+    src: secrets.yaml.j2
+    dest: "{{ openvox_server_code_dir }}/environments/production/data/secrets.yaml"
+    owner: root
+    group: puppet
+    mode: "0640"
+  no_log: true # the content is a secret
+
 - name: Enable and start puppetserver
   ansible.builtin.service:
     name: "{{ openvox_server_service }}"

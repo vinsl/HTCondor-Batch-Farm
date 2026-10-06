@@ -10,12 +10,6 @@ class profile::base (
   Array[Integer] $firewall_ports,
   String $ntp_pool,
 
-  # TODO(human): declare two more parameters whose names match the keys already present in
-  # data/common.yaml, so that Hiera fills them automatically:
-  #   - the list of ports to open in the firewall (an array of integers: Array[Integer]),
-  #   - the NTP server pool (a String).
-  # Hint: open puppet/data/common.yaml and copy the key names after "profile::base::".
-  # Note: when a parameter has no default and no Hiera value, compilation fails. That is what we want.
 ) {
   # --- Base packages (an array as title creates one resource per element) -------------------
   package { $packages:
@@ -42,7 +36,6 @@ class profile::base (
     ensure => running,
     enable => true,
     subscribe => File['/etc/chrony.conf'],
-    # TODO(human): restart chronyd when /etc/chrony.conf changes (you wrote this relation in demo2).
   }
 
   # --- SSH hardening: a drop-in file, the main sshd_config is left untouched ----------------
@@ -53,8 +46,6 @@ class profile::base (
     mode    => '0600',
     content => "PermitRootLogin no\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nX11Forwarding no\n",
     notify  => Service['sshd'],
-    # TODO(human): sshd must reload this file after a change. Use the relation that notifies
-    # Service['sshd'] (the service is declared below). Do not use `require`.
   }
 
   service { 'sshd':
@@ -80,9 +71,6 @@ class profile::base (
     exec { "firewalld-open-${port}":
       command => "/usr/bin/firewall-cmd --permanent --add-port=${port}/tcp",
       unless  => "/usr/bin/firewall-cmd --permanent --query-port=${port}/tcp",
-      # TODO(human): make this exec idempotent with `unless`: a command that exits 0 when the port
-      # is ALREADY open (exec then does nothing). Hint: firewall-cmd has a --query-port option;
-      # keep --permanent and the same ${port}/tcp format.
       require => Service['firewalld'],
       notify  => Exec['firewalld-reload'],
     }
