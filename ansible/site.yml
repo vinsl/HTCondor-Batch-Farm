@@ -1,0 +1,19 @@
+---
+# Bootstrap the fleet: after this playbook, every node has an OpenVox agent configured to join
+# the server, and the server is ready to sign (or refuse) their certificate requests.
+#
+# Order matters: the central manager goes first so that the server is up when the other nodes
+# start their agent for the first time.
+
+- name: Central manager (OpenVox agent + server)
+  hosts: central_manager
+  become: true
+  roles:
+    - openvox_bootstrap
+    - openvox_server
+
+- name: Other nodes (OpenVox agent only)
+  hosts: all:!central_manager
+  become: true
+  roles:
+    - openvox_bootstrap

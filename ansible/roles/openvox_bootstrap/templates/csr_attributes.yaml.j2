@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+# Data embedded in the certificate signing request (CSR) the agent sends at its first run.
+#
+# The file has two top-level keys:
+#   custom_attributes     data used by the autosign policy only; it is NOT kept in the certificate.
+#   extension_requests    data written INTO the signed certificate, so the node cannot alter it
+#                         afterwards. The server exposes it as $trusted['extensions'].
+#
+# Reference values:
+#   challenge password:  custom attribute with the OID 1.2.840.113549.1.9.7
+#   node role:           extension request named pp_role (registered Puppet extension, short name accepted)
+#
+# The challenge password is autosign_challenge (group_vars/all.yml). The role is the inventory group
+# of the host: group_names is the list of groups of the current host, here exactly one.
+
+custom_attributes:
+  "1.2.840.113549.1.9.7": "{{ autosign_challenge }}"
+
+extension_requests:
+  pp_role: "{{ group_names[0] }}"

@@ -1,0 +1,23 @@
+# {{ ansible_managed }}
+# The agent settings. Section [main] applies to every Puppet command on the node.
+
+[main]
+# certname is the name written in the node certificate: the inventory name of the host. It must be
+# stable, the autosign policy and the trusted facts rely on it.
+certname = {{ inventory_hostname }}
+
+# The server the agent contacts. A NAME defined once in group_vars/all.yml (it resolves through
+# /etc/hosts), not an IP address: the server certificate is validated against this name.
+server = {{ openvox_server_name }}
+
+{# TODO(human): add a [server] section ONLY on the central manager (the other nodes have no server).
+   It must contain one setting: autosign = <path of the policy script>, taken from the variable
+   openvox_autosign_script (group_vars/all.yml).
+   Hint: Jinja conditional {% if ... %} ... {% endif %} on the groups of the current host
+   (group_names, a list: use the "in" operator with the group name central_manager).
+   A Jinja comment like this one produces no output in the rendered file. #}
+
+{% if 'central_manager' in group_names %}
+[server]
+autosign = {{ openvox_autosign_script }}
+{% endif %}

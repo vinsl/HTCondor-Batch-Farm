@@ -1,0 +1,21 @@
+---
+# Variables shared by every host of the fleet.
+
+# OpenVox release package: installs the Vox Pupuli yum repository and its GPG key.
+openvox_release_url: https://yum.voxpupuli.org/openvox8-release-el-9.noarch.rpm
+
+# The OpenVox server runs on the central manager (lab compromise, see docs/DECISIONS.md).
+openvox_server_name: cm-01
+# Agents must reach the server through its PRIVATE address: the security group rule for 8140 only
+# matches traffic coming from a member of the group, which public addresses do not.
+openvox_server_ip: "{{ hostvars[openvox_server_name].private_ip }}"
+
+# Shared secret placed in every CSR and checked by the autosign policy script.
+# It lives OUTSIDE the repository: generated once on the Codespace, never committed.
+autosign_challenge: "{{ lookup('ansible.builtin.file', '~/.config/batchfarm/autosign_password') | trim }}"
+
+# Autosign policy: puppetserver runs this executable for every incoming CSR. It receives the
+# certname as $1 and the CSR (PEM) on stdin; exit 0 signs, any other exit code refuses.
+openvox_autosign_script: /etc/puppetlabs/puppet/autosign.sh
+# File on the server holding the expected challenge password, read by the policy script.
+openvox_autosign_secret_file: /etc/puppetlabs/puppet/autosign_secret

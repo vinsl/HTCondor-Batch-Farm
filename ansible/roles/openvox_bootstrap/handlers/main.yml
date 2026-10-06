@@ -1,0 +1,18 @@
+---
+# A handler is a task that only runs when another task notifies it, once, at the end of the play.
+# Several notifications of the same handler during a play still trigger a single run.
+#
+# A handler has exactly the same shape as a task (name + one module + the module arguments).
+# What makes it a handler is only its place (this file) and that it runs on notification.
+# The "name" is how tasks refer to it: "notify: <this exact name>".
+#
+# Services: the module ansible.builtin.service manages a systemd service. Its two arguments here:
+#   name:   the service to act on
+#   state:  started | stopped | restarted | reloaded   (restarted also starts a stopped service)
+
+- name: Restart puppet agent
+  ansible.builtin.service:
+    # Quotes are mandatory when a YAML value STARTS with "{{": without them, YAML reads "{" as the
+    # start of a dictionary and fails before Ansible even sees the variable.
+    name: "{{ openvox_bootstrap_agent_service }}"
+    state: restarted # also starts the service if it is stopped (first run)

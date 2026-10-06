@@ -1,0 +1,49 @@
+---
+# Install and configure the OpenVox server on the central manager. The openvox_bootstrap role runs
+# BEFORE this one in the same play: the yum repository, puppet.conf (including the [server]
+# section with the autosign setting) and the agent are already in place.
+#
+# Order inside this role: package -> configuration files -> service. A service must never start
+# before the files it reads exist.
+
+- name: Install the OpenVox server
+  ansible.builtin.package:
+    name: "{{ openvox_server_package }}"
+    state: present
+
+- name: Size the JVM heap of puppetserver
+  ansible.builtin.lineinfile:
+    path: "{{ openvox_server_sysconfig }}"
+    regexp: '^JAVA_ARGS='
+    # TODO(human): the line must set the initial (-Xms) AND the maximum (-Xmx) heap to the value of
+    # openvox_server_heap. Keep both equal: the JVM then never has to resize its heap.
+    # Hint: the value of JAVA_ARGS is a quoted string containing both options, e.g. "-Xmx512m ...".
+    line: 'JAVA_ARGS="-Xms{{ openvox_server_heap }} -Xmx{{ openvox_server_heap }}"'
+  notify: Restart puppetserver
+
+- name: Store the challenge password the autosign policy compares against
+  ansible.builtin.copy:
+    dest: "{{ openvox_autosign_secret_file }}"
+    content: "{{ autosign_challenge }}\n"
+    # TODO(human): who must be able to read this file? The policy script runs as the user of the
+    # puppetserver service (user and group "puppet"), not as root. Choose owner, group and mode
+    # so that puppet can read it and nobody else can. Hint: owner root, group puppet, and a mode
+    # that gives read to the group only, as an octal string.
+    owner: root
+    group: puppet
+    mode: "0640"
+  no_log: true # the content is a secret
+
+- name: Install the autosign policy script
+  ansible.builtin.copy:
+    src: autosign.sh
+    dest: "{{ openvox_autosign_script }}"
+    owner: root
+    group: puppet
+    mode: "0750" # executable by the puppet group, which is the service account
+
+- name: Enable and start puppetserver
+  ansible.builtin.service:
+    name: "{{ openvox_server_service }}"
+    state: started
+    enabled: true
