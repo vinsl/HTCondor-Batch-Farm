@@ -1,0 +1,10 @@
+<%- | String $condor_host | -%>
+# Managed by Puppet (profile::htcondor). Do not edit by hand: changes are reverted at the next run.
+# Settings common to every node of the pool.
+
+# The central manager: the machine whose collector every daemon reports to.
+CONDOR_HOST = <%= $condor_host %>
+
+# One trust domain for the whole pool: the identity inside every token. By default each node uses
+# its own hostname, so a token minted on a worker would be refused by the collector.
+TRUST_DOMAIN = $(CONDOR_HOST)

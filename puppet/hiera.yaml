@@ -1,0 +1,33 @@
+---
+# Hiera 5 configuration of the environment. Hiera is the data layer: the CODE (profiles) describes
+# the structure, the DATA (these YAML files) provides the values, and it can differ per node or role.
+#
+# How a lookup works: for a key such as profile::base::firewall_ports, Hiera reads the levels below
+# from top to bottom and returns the value of the FIRST file that defines the key.
+# That is the "most specific wins" rule: node, then role, then common.
+#
+# The paths contain variables written %{...}. Hiera knows $trusted (built from the certificate):
+#   %{trusted.certname}              -> the certname, for example wn-01
+#   %{trusted.extensions.pp_role}    -> the role from the certificate, for example execute
+# datadir is relative to the directory containing this file.
+
+version: 5
+
+defaults:
+  datadir: data
+  data_hash: yaml_data
+
+hierarchy:
+  # Secrets first: written on the server by Ansible from files kept outside the repository
+  # (puppet/data/secrets*.yaml is git-ignored). A missing file is simply skipped by Hiera.
+  - name: "Secrets (not committed)"
+    path: "secrets.yaml"
+
+  - name: "Per-node data"
+    path: "nodes/%{trusted.certname}.yaml"
+
+  - name: "Per-role data"
+    path: "roles/%{trusted.extensions.pp_role}.yaml"
+
+  - name: "Common data"
+    path: "common.yaml"

@@ -1,0 +1,83 @@
+title = "Scale out: a new worker joins the pool with no manual step"
+goal = "Adding one entry to the OpenTofu node map is the only decision: the machine is created, admitted by the autosign policy with the role from its request, configured by Puppet, and takes jobs."
+
+[[step]]
+title = "Baseline: a pool of two workers"
+why = "The slots the central manager sees before the change."
+host = "cm-01"
+run = "condor_status -af Machine State Cpus; echo; /opt/puppetlabs/bin/puppetserver ca list --all | grep -c '^ *wn-' | sed 's/^/signed workers: /'"
+become = true
+
+[[step]]
+title = "The only change: one more entry in the node map"
+why = "The fleet is data, not code. wn-03 is the same kind of node as the other workers."
+run = '''cat > /tmp/scale-out.tfvars <<'TFVARS'
+nodes = {
+  "cm-01" = { role = "central_manager", instance_type = "m7i-flex.large" }
+  "wn-01" = { role = "execute", instance_type = "t3.small" }
+  "wn-02" = { role = "execute", instance_type = "t3.small" }
+  "wn-03" = { role = "execute", instance_type = "t3.small" }
+}
+TFVARS
+cat /tmp/scale-out.tfvars'''
+
+[[step]]
+title = "Plan: exactly one machine is added"
+why = "OpenTofu compares the data with what exists: nothing else changes."
+run = "cd tofu && tofu plan -no-color -var-file=/tmp/scale-out.tfvars | grep -E 'will be (created|updated|destroyed)|Plan:'"
+
+[[step]]
+title = "Apply: the machine is created and the inventory regenerated"
+why = "The Ansible inventory is generated from the instances, so wn-03 appears in it automatically."
+run = "cd tofu && tofu apply -no-color -auto-approve -var-file=/tmp/scale-out.tfvars | grep -E 'Creating\\.\\.\\.|Creation complete|Apply complete'"
+
+[[step]]
+title = "Wait until the machine accepts SSH"
+why = "A fresh EC2 instance needs a short time to boot. The check is repeated until Ansible reaches the node."
+[step.wait_until]
+run = "cd ansible && ANSIBLE_CONFIG=$PWD/ansible.cfg ansible wn-03 -m ping >/dev/null 2>&1"
+timeout = 300
+interval = 10
+[step.after_wait]
+run = "cd ansible && ANSIBLE_CONFIG=$PWD/ansible.cfg ansible wn-03 -m ping | grep -E 'SUCCESS|pong'"
+
+[[step]]
+title = "Bootstrap only the new node"
+why = "Ansible installs the agent and sends the certificate request carrying the role and the challenge password. From here on, nothing is configured by hand."
+run = "cd ansible && ANSIBLE_CONFIG=$PWD/ansible.cfg ansible-playbook site.yml --limit wn-03 | grep -E 'PLAY RECAP|^wn-03 +:'"
+
+[[step]]
+title = "The node joins the pool by itself"
+why = "Behind the scenes: the autosign policy signs the request, Puppet compiles the catalog for the role, installs and configures HTCondor, and the startd registers at the collector."
+[step.wait_until]
+host = "cm-01"
+run = "condor_status -af Machine | grep -q '^wn-03'"
+timeout = 600
+interval = 15
+[step.after_wait]
+host = "cm-01"
+run = "condor_status -af Machine State Cpus NODE_IS_HEALTHY"
+
+[[step]]
+title = "Its certificate carries the role, signed automatically"
+why = "wn-03 was admitted by the policy script, and its role is written in the certificate."
+host = "cm-01"
+become = true
+run = "/opt/puppetlabs/bin/puppetserver ca list --all | grep -E '^ *wn-03' | cut -c1-30; openssl x509 -in /etc/puppetlabs/puppet/ssl/ca/signed/wn-03.pem -noout -text | grep -A1 '1.3.6.1.4.1.34380.1.1.13' | tail -1 | tr -d ' .' | sed 's/^/pp_role in the certificate: /'"
+
+[[step]]
+title = "Jobs run on the new node"
+why = "The proof that wn-03 is a full member of the pool."
+host = "cm-01"
+run = "cd ~/jobs && condor_submit sleep.sub"
+[step.wait_until]
+host = "cm-01"
+run = "condor_q -run -nobatch | grep -q '@wn-03'"
+timeout = 180
+interval = 5
+
+[[step]]
+title = "Jobs per worker"
+why = "Running jobs, grouped by worker."
+host = "cm-01"
+run = "condor_q -run -nobatch | grep -oE '@wn-[0-9]+' | sort | uniq -c"

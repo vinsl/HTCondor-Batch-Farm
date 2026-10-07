@@ -19,3 +19,7 @@ autosign_challenge: "{{ lookup('ansible.builtin.file', '~/.config/batchfarm/auto
 openvox_autosign_script: /etc/puppetlabs/puppet/autosign.sh
 # File on the server holding the expected challenge password, read by the policy script.
 openvox_autosign_secret_file: /etc/puppetlabs/puppet/autosign_secret
+
+# Shared HTCondor pool key (IDTOKENS signing key). Kept OUTSIDE the repository like the autosign
+# secret, and handed to Puppet through the Hiera file puppet/data/secrets.yaml written on the server.
+htcondor_pool_password: "{{ lookup('ansible.builtin.file', '~/.config/batchfarm/htcondor_pool_password') | trim }}"

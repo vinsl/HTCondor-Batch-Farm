@@ -1,0 +1,6 @@
+---
+# The central manager also hosts the OpenVox server, so it must accept agent requests on 8140.
+# The first file that defines the key wins: this list REPLACES the common one, hence 9618 again.
+profile::base::firewall_ports:
+  - 8140
+  - 9618

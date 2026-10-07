@@ -1,0 +1,13 @@
+---
+# Values valid for every node, unless a role file or a node file overrides them (hiera.yaml order).
+
+# Ports opened by profile::base in firewalld (SSH is already allowed by the default zone).
+# 9618 is the HTCondor shared port: every node listens on it.
+profile::base::firewall_ports:
+  - 9618
+
+# NTP servers used by chrony.
+profile::base::ntp_pool: 2.almalinux.pool.ntp.org
+
+# HTCondor: name of the machine running the collector and the negotiator (the central manager).
+profile::htcondor::condor_host: cm-01

@@ -1,0 +1,9 @@
+# 20 independent jobs, one seed each ($(Process) = 0..19). Submit with: condor_submit pi.sub
+executable     = pi.py
+arguments      = $(Process) 2000000
+output         = out/pi.$(Cluster).$(Process).out
+error          = out/pi.$(Cluster).$(Process).err
+log            = out/pi.log
+request_cpus   = 1
+request_memory = 128
+queue 20

@@ -17,3 +17,38 @@
   become: true
   roles:
     - openvox_bootstrap
+
+# Last: make sure every agent runs, now that the server is up. The handler alone is not enough: if a
+# first run fails before the handler fires, later runs change nothing and the agent never starts
+# (that happened to wn-02). This play is idempotent: ok when the agents already run.
+- name: Every node runs its OpenVox agent
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure the agent service is running and enabled
+      ansible.builtin.service:
+        name: puppet
+        state: started
+        enabled: true
+
+# The submit machine (central manager) gets the sample jobs of the repository, so demonstrations can
+# be run from its home directory as the normal user.
+- name: The submit machine gets the sample jobs
+  hosts: central_manager
+  become: true
+  tasks:
+    - name: Copy the sample jobs to the home of the submit user
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../jobs/"
+        dest: /home/ec2-user/jobs/
+        owner: ec2-user
+        group: ec2-user
+        mode: preserve
+
+    - name: Create the job output directory
+      ansible.builtin.file:
+        path: /home/ec2-user/jobs/out
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+        mode: "0755"

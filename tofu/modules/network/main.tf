@@ -40,3 +40,11 @@ resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
 }
+
+# The default security group of every VPC allows all traffic between its members. Nothing uses it
+# (instances use the dedicated group of the root module), so it is emptied: no rule at all.
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.this.id
+
+  tags = { Name = "${var.name}-default-unused" }
+}

@@ -1,0 +1,307 @@
+{
+  "title": "A sick worker removes itself from the pool, then heals",
+  "goal": "When a critical service stops on a worker, its health check makes it refuse new jobs by itself; Puppet then repairs the service and the worker takes jobs again, with no human decision.",
+  "started_at": "2026-10-07T09:48:08+00:00",
+  "git_commit": "86fa7f3",
+  "steps": [
+    {
+      "index": 1,
+      "title": "Baseline: both workers are healthy",
+      "why": "Each worker publishes NODE_IS_HEALTHY and the reason, as seen by the central manager.",
+      "started_s": 0.0,
+      "started_at": "2026-10-07T09:48:08+00:00",
+      "command": {
+        "host": "cm-01",
+        "become": false,
+        "run": "condor_status -af Machine NODE_IS_HEALTHY NODE_HEALTH_REASON State",
+        "rc": 0,
+        "stdout": "wn-01 true ok Unclaimed\nwn-02 true ok Unclaimed",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 1.0
+    },
+    {
+      "index": 2,
+      "title": "Break a service on wn-01",
+      "why": "chronyd (time synchronisation) is one of the services a worker cannot run jobs without. An operator or a crash could stop it.",
+      "started_s": 1.0,
+      "started_at": "2026-10-07T09:48:09+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "systemctl stop chronyd; echo \"chronyd is now: $(systemctl is-active chronyd)\"",
+        "rc": 0,
+        "stdout": "chronyd is now: inactive",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 1.1
+    },
+    {
+      "index": 3,
+      "title": "The worker declares itself sick",
+      "why": "The health check runs every 60 seconds. As soon as its output changes the startd publishes it to the collector.",
+      "started_s": 2.1,
+      "started_at": "2026-10-07T09:48:10+00:00",
+      "ok": true,
+      "wait_until": {
+        "host": "cm-01",
+        "run": "condor_status -af Machine NODE_IS_HEALTHY | grep -q '^wn-01 false'",
+        "condition_met": true,
+        "waited_s": 22.8,
+        "attempts": [
+          {
+            "at_s": 3.0,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 13.9,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 24.9,
+            "rc": 0,
+            "stdout": ""
+          }
+        ]
+      },
+      "after_wait": {
+        "host": "cm-01",
+        "become": false,
+        "run": "condor_status -af Machine NODE_IS_HEALTHY NODE_HEALTH_REASON",
+        "rc": 0,
+        "stdout": "wn-01 false service chronyd is not active\nwn-02 true ok",
+        "stderr": ""
+      },
+      "duration_s": 23.8
+    },
+    {
+      "index": 4,
+      "title": "Submit 8 jobs of 25 seconds",
+      "why": "The queue holds more jobs than the healthy worker can run at once.",
+      "started_s": 25.8,
+      "started_at": "2026-10-07T09:48:34+00:00",
+      "command": {
+        "host": "cm-01",
+        "become": false,
+        "run": "cd ~/jobs && condor_submit sleep.sub",
+        "rc": 0,
+        "stdout": "Submitting job(s)........\n8 job(s) submitted to cluster 5.",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 1.0
+    },
+    {
+      "index": 5,
+      "title": "Only the healthy worker runs jobs",
+      "why": "wn-01 is excluded by its own START expression: none of the running jobs is on it.",
+      "started_s": 26.8,
+      "started_at": "2026-10-07T09:48:35+00:00",
+      "ok": true,
+      "wait_until": {
+        "host": "cm-01",
+        "run": "test $(condor_q -run -nobatch | grep -c '@wn-02') -ge 1",
+        "condition_met": true,
+        "waited_s": 1.0,
+        "attempts": [
+          {
+            "at_s": 27.8,
+            "rc": 0,
+            "stdout": ""
+          }
+        ]
+      },
+      "after_wait": {
+        "host": "cm-01",
+        "become": false,
+        "run": "condor_q -run -nobatch | grep -oE '@wn-[0-9]+' | sort | uniq -c; test $(condor_q -run -nobatch | grep -c '@wn-01') -eq 0",
+        "rc": 0,
+        "stdout": "      2 @wn-02",
+        "stderr": ""
+      },
+      "duration_s": 1.9
+    },
+    {
+      "index": 6,
+      "title": "Why an idle job waits",
+      "why": "condor_q -better-analyze separates 'the job asks too much' from 'the machines refuse the job': here the machines refuse.",
+      "started_s": 28.7,
+      "started_at": "2026-10-07T09:48:37+00:00",
+      "command": {
+        "host": "cm-01",
+        "become": false,
+        "run": "condor_q -better-analyze $(condor_q -idle -af ClusterId ProcId | head -1 | tr ' ' .) 2>&1 | grep -E 'slots|Requirements expression'",
+        "rc": 0,
+        "stdout": "The Requirements expression for job 5.002 is\nThe Requirements expression for job 5.002 reduces to these conditions:\n005.002:  Run analysis summary ignoring user priority.  Of 2 slots on 2 machines,\n      0 slots are rejected by your job's requirements\n      1 slots reject your job because of their own requirements\n      0 slots match and are willing to run your job\n      1 slots would match if drained",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 1.0
+    },
+    {
+      "index": 7,
+      "title": "Puppet repairs the service",
+      "why": "The next Puppet run notices chronyd is stopped, which is a drift from the desired state, and starts it.",
+      "started_s": 29.7,
+      "started_at": "2026-10-07T09:48:38+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "/opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes >/tmp/run.log 2>&1; rc=$?; grep -E 'Service.chronyd' /tmp/run.log | sed 's/\\x1b\\[[0-9;]*m//g' | cut -c1-140; echo \"puppet exit code: $rc (2 = changes applied)\"; test $rc -eq 2",
+        "rc": 0,
+        "stdout": "Notice: /Stage[main]/Profile::Base/Service[chronyd]/ensure: ensure changed 'stopped' to 'running' (corrective)\nInfo: /Stage[main]/Profile::Base/Service[chronyd]: Unscheduling refresh on Service[chronyd]\npuppet exit code: 2 (2 = changes applied)",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 4.9
+    },
+    {
+      "index": 8,
+      "title": "The worker declares itself healthy again",
+      "why": "The health check sees chronyd running, publishes True, and START accepts jobs again.",
+      "started_s": 34.6,
+      "started_at": "2026-10-07T09:48:43+00:00",
+      "ok": true,
+      "wait_until": {
+        "host": "cm-01",
+        "run": "condor_status -af Machine NODE_IS_HEALTHY | grep -q '^wn-01 true'",
+        "condition_met": true,
+        "waited_s": 55.7,
+        "attempts": [
+          {
+            "at_s": 35.6,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 46.6,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 57.5,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 68.4,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 79.4,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 90.3,
+            "rc": 0,
+            "stdout": ""
+          }
+        ]
+      },
+      "after_wait": {
+        "host": "cm-01",
+        "become": false,
+        "run": "condor_status -af Machine NODE_IS_HEALTHY NODE_HEALTH_REASON",
+        "rc": 0,
+        "stdout": "wn-01 true ok\nwn-01 true ok\nwn-01 true ok\nwn-02 true ok\nwn-02 true ok\nwn-02 true ok",
+        "stderr": ""
+      },
+      "duration_s": 56.6
+    },
+    {
+      "index": 9,
+      "title": "Let the first batch finish",
+      "why": "So the next batch starts from an empty queue.",
+      "started_s": 91.3,
+      "started_at": "2026-10-07T09:49:39+00:00",
+      "ok": true,
+      "wait_until": {
+        "host": "cm-01",
+        "run": "test $(condor_q -nobatch -af ClusterId | wc -l) -eq 0",
+        "condition_met": true,
+        "waited_s": 22.8,
+        "attempts": [
+          {
+            "at_s": 92.2,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 103.1,
+            "rc": 1,
+            "stdout": ""
+          },
+          {
+            "at_s": 114.1,
+            "rc": 0,
+            "stdout": ""
+          }
+        ]
+      },
+      "after_wait": {
+        "host": "cm-01",
+        "become": false,
+        "run": "condor_q -nobatch | tail -1",
+        "rc": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "duration_s": 23.8
+    },
+    {
+      "index": 10,
+      "title": "A new batch runs on both workers",
+      "why": "The proof that wn-01 is back in service.",
+      "started_s": 115.1,
+      "started_at": "2026-10-07T09:50:03+00:00",
+      "command": {
+        "host": "cm-01",
+        "become": false,
+        "run": "cd ~/jobs && condor_submit sleep.sub",
+        "rc": 0,
+        "stdout": "Submitting job(s)........\n8 job(s) submitted to cluster 6.",
+        "stderr": ""
+      },
+      "ok": true,
+      "wait_until": {
+        "host": "cm-01",
+        "run": "test $(condor_q -run -nobatch | grep -oE '@wn-[0-9]+' | sort -u | wc -l) -ge 2",
+        "condition_met": true,
+        "waited_s": 1.9,
+        "attempts": [
+          {
+            "at_s": 117.0,
+            "rc": 0,
+            "stdout": ""
+          }
+        ]
+      },
+      "duration_s": 1.9
+    },
+    {
+      "index": 11,
+      "title": "Jobs per worker",
+      "why": "Running jobs, grouped by worker.",
+      "started_s": 117.0,
+      "started_at": "2026-10-07T09:50:05+00:00",
+      "command": {
+        "host": "cm-01",
+        "become": false,
+        "run": "condor_q -run -nobatch | grep -oE '@wn-[0-9]+' | sort | uniq -c",
+        "rc": 0,
+        "stdout": "      2 @wn-01\n      2 @wn-02",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 1.0
+    }
+  ],
+  "duration_s": 117.9,
+  "success": true
+}

@@ -42,8 +42,38 @@
     group: puppet
     mode: "0750" # executable by the puppet group, which is the service account
 
+# The control repository (puppet/ in this repository) is copied as the "production" environment.
+# Lab shortcut: a plain copy does not delete files removed from the repository, and nothing pulls
+# changes automatically. In production this is r10k (or Code Manager) deploying from git.
+- name: Deploy the control repository as the production environment
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../puppet/"
+    dest: "{{ openvox_server_code_dir }}/environments/production/"
+    owner: root
+    group: puppet
+    mode: "0644"
+    directory_mode: "0755"
+
+# Written AFTER the code copy, in the same environment: Hiera reads it as the top level.
+- name: Write the Hiera secrets file (HTCondor pool key)
+  ansible.builtin.template:
+    src: secrets.yaml.j2
+    dest: "{{ openvox_server_code_dir }}/environments/production/data/secrets.yaml"
+    owner: root
+    group: puppet
+    mode: "0640"
+  no_log: true # the content is a secret
+
 - name: Enable and start puppetserver
   ansible.builtin.service:
     name: "{{ openvox_server_service }}"
     state: started
     enabled: true
+
+# The service is "started" as soon as systemd launches the JVM, but the server only listens on 8140 one
+# or two minutes later. Agents started right after (the handler of openvox_bootstrap) would get
+# "Connection refused" and then wait a whole run interval (30 min) before trying again.
+- name: Wait until puppetserver accepts agent connections
+  ansible.builtin.wait_for:
+    port: 8140
+    timeout: 300

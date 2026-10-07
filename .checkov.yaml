@@ -1,0 +1,21 @@
+# Checkov configuration. Each skipped check is a deliberate choice of this lab, written down here
+# and in docs/DECISIONS.md. Nothing is skipped to make the pipeline green.
+framework:
+  - terraform
+directory:
+  - tofu
+quiet: true
+compact: true
+skip-check:
+  # Public addresses and public subnet: no NAT gateway on purpose (cost). Nodes are protected by the
+  # security group alone: SSH from one admin /32, OpenVox and HTCondor ports only between members.
+  - CKV_AWS_88
+  - CKV_AWS_130
+  # Detailed (1-minute) CloudWatch monitoring costs money and there is no monitoring stack in scope.
+  - CKV_AWS_126
+  # VPC flow logs cost money and need a log destination: out of scope for a short-lived lab.
+  - CKV2_AWS_11
+  # No node calls AWS APIs: an instance profile would only widen the attack surface.
+  - CKV2_AWS_41
+  # The availability zone data source is filtered on state=available; the first zone is used on purpose.
+  - CKV_AWS_394

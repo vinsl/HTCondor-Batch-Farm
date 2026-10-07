@@ -6,3 +6,4 @@ openvox_server_heap: 2g
 openvox_server_package: openvox-server
 openvox_server_service: puppetserver
 openvox_server_sysconfig: /etc/sysconfig/puppetserver
+openvox_server_code_dir: /etc/puppetlabs/code

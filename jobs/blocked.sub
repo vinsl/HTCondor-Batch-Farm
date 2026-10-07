@@ -1,0 +1,10 @@
+# A job that no machine can run (it asks for ~100 GB of memory): use it with
+# condor_q -better-analyze to see why a job stays idle.
+executable     = hello.sh
+arguments      = 5
+output         = out/blocked.out
+error          = out/blocked.err
+log            = out/blocked.log
+request_cpus   = 1
+request_memory = 100000
+queue

@@ -1,0 +1,9 @@
+# 8 jobs of 25 seconds: long enough to watch where they run with condor_q -run.
+executable     = hello.sh
+arguments      = 25
+output         = out/sleep.$(Cluster).$(Process).out
+error          = out/sleep.$(Cluster).$(Process).err
+log            = out/sleep.log
+request_cpus   = 1
+request_memory = 64
+queue 8

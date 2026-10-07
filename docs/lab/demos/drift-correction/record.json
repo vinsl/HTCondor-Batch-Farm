@@ -1,0 +1,112 @@
+{
+  "title": "Puppet detects and reverts manual changes",
+  "goal": "Manual changes made on a node by hand are detected as drift and reverted by the next Puppet run, and a further run changes nothing.",
+  "started_at": "2026-10-07T09:47:46+00:00",
+  "git_commit": "86fa7f3",
+  "steps": [
+    {
+      "index": 1,
+      "title": "Baseline: wn-01 matches its desired state",
+      "why": "A Puppet run on a converged node changes nothing: exit code 0.",
+      "started_s": 0.0,
+      "started_at": "2026-10-07T09:47:46+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "/opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes >/dev/null 2>&1; rc=$?; echo \"puppet exit code: $rc (0 = nothing to change)\"; test $rc -eq 0",
+        "rc": 0,
+        "stdout": "puppet exit code: 0 (0 = nothing to change)",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 4.6
+    },
+    {
+      "index": 2,
+      "title": "Three manual changes, as a careless admin would make",
+      "why": "Edit the time configuration, delete the SSH hardening file, and stop the firewall.",
+      "started_s": 4.6,
+      "started_at": "2026-10-07T09:47:51+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "echo '# edited by hand' >> /etc/chrony.conf; rm -f /etc/ssh/sshd_config.d/60-hardening.conf; systemctl stop firewalld; echo \"chrony.conf hand-edited: $(grep -c 'edited by hand' /etc/chrony.conf) line\"; echo \"hardening file present: $(test -f /etc/ssh/sshd_config.d/60-hardening.conf && echo yes || echo no)\"; echo \"firewalld: $(systemctl is-active firewalld)\"",
+        "rc": 0,
+        "stdout": "chrony.conf hand-edited: 1 line\nhardening file present: no\nfirewalld: inactive",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 1.1
+    },
+    {
+      "index": 3,
+      "title": "Dry run: what Puppet would change",
+      "why": "--noop compares the node to its desired state and reports the drift without touching anything (the equivalent of tofu plan).",
+      "started_s": 5.7,
+      "started_at": "2026-10-07T09:47:52+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "/opt/puppetlabs/bin/puppet agent -t --noop >/tmp/noop.log 2>&1; sed 's/\\x1b\\[[0-9;]*m//g' /tmp/noop.log | grep -E '^Notice: /Stage' | cut -c1-150",
+        "rc": 0,
+        "stdout": "Notice: /Stage[main]/Profile::Base/File[/etc/chrony.conf]/content: \nNotice: /Stage[main]/Profile::Base/File[/etc/chrony.conf]/content: \nNotice: /Stage[main]/Profile::Base/File[/etc/chrony.conf]/content: content changed '{sha256}e5d081a7cdee6859effd3831d1065cf8e54ecfb08be9d7bedd17cfa0fd\nNotice: /Stage[main]/Profile::Base/Service[chronyd]: Would have triggered 'refresh' from 1 event\nNotice: /Stage[main]/Profile::Base/File[/etc/ssh/sshd_config.d/60-hardening.conf]/ensure: defined content as '{sha256}38cbcb884fc028e8b07d32ea5c4b2ccb\nNotice: /Stage[main]/Profile::Base/Service[sshd]: Would have triggered 'refresh' from 1 event\nNotice: /Stage[main]/Profile::Base/Service[firewalld]/ensure: ensure changed 'stopped' to 'running' (noop) (corrective)\nNotice: /Stage[main]/Profile::Base/Exec[firewalld-open-9618]/returns: executed successfully (noop) (corrective)\nNotice: /Stage[main]/Profile::Base/Exec[firewalld-reload]: Would have triggered 'refresh' from 1 event",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 4.3
+    },
+    {
+      "index": 4,
+      "title": "Real run: Puppet reverts the drift",
+      "why": "Every difference is corrected; the services that depend on a corrected file are refreshed.",
+      "started_s": 10.0,
+      "started_at": "2026-10-07T09:47:56+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "/opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes >/tmp/run.log 2>&1; rc=$?; sed 's/\\x1b\\[[0-9;]*m//g' /tmp/run.log | grep -E '^Notice: /Stage' | cut -c1-150; echo \"puppet exit code: $rc (2 = changes applied)\"; test $rc -eq 2",
+        "rc": 0,
+        "stdout": "Notice: /Stage[main]/Profile::Base/File[/etc/chrony.conf]/content: \nNotice: /Stage[main]/Profile::Base/File[/etc/chrony.conf]/content: \nNotice: /Stage[main]/Profile::Base/File[/etc/chrony.conf]/content: content changed '{sha256}e5d081a7cdee6859effd3831d1065cf8e54ecfb08be9d7bedd17cfa0fd\nNotice: /Stage[main]/Profile::Base/Service[chronyd]: Triggered 'refresh' from 1 event\nNotice: /Stage[main]/Profile::Base/File[/etc/ssh/sshd_config.d/60-hardening.conf]/ensure: defined content as '{sha256}38cbcb884fc028e8b07d32ea5c4b2ccb\nNotice: /Stage[main]/Profile::Base/Service[sshd]: Triggered 'refresh' from 1 event\nNotice: /Stage[main]/Profile::Base/Service[firewalld]/ensure: ensure changed 'stopped' to 'running' (corrective)\npuppet exit code: 2 (2 = changes applied)",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 5.8
+    },
+    {
+      "index": 5,
+      "title": "Verify the node is back to its desired state",
+      "why": "The hand edit is gone, the hardening file is back, the firewall runs again.",
+      "started_s": 15.8,
+      "started_at": "2026-10-07T09:48:02+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "test $(grep -c 'edited by hand' /etc/chrony.conf) -eq 0 && echo 'chrony.conf: hand edit gone'; test -f /etc/ssh/sshd_config.d/60-hardening.conf && echo 'sshd hardening file: back'; echo \"firewalld: $(systemctl is-active firewalld)\"; test \"$(systemctl is-active firewalld)\" = active",
+        "rc": 0,
+        "stdout": "chrony.conf: hand edit gone\nsshd hardening file: back\nfirewalld: active",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 1.1
+    },
+    {
+      "index": 6,
+      "title": "A second run changes nothing",
+      "why": "Idempotence: once converged, Puppet does nothing.",
+      "started_s": 17.0,
+      "started_at": "2026-10-07T09:48:03+00:00",
+      "command": {
+        "host": "wn-01",
+        "become": true,
+        "run": "/opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes >/dev/null 2>&1; rc=$?; echo \"puppet exit code: $rc (0 = nothing to change)\"; test $rc -eq 0",
+        "rc": 0,
+        "stdout": "puppet exit code: 0 (0 = nothing to change)",
+        "stderr": ""
+      },
+      "ok": true,
+      "duration_s": 4.4
+    }
+  ],
+  "duration_s": 21.3,
+  "success": true
+}

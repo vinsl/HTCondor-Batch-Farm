@@ -87,6 +87,7 @@ resource "aws_instance" "node" {
   vpc_security_group_ids      = [aws_security_group.cluster.id]
   key_name                    = aws_key_pair.admin.key_name
   associate_public_ip_address = true
+  ebs_optimized               = true
   instance_type               = each.value.instance_type
 
   metadata_options {
