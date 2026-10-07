@@ -10,11 +10,9 @@ certname = {{ inventory_hostname }}
 # /etc/hosts), not an IP address: the server certificate is validated against this name.
 server = {{ openvox_server_name }}
 
-{# TODO(human): add a [server] section ONLY on the central manager (the other nodes have no server).
-   It must contain one setting: autosign = <path of the policy script>, taken from the variable
-   openvox_autosign_script (group_vars/all.yml).
-   Hint: Jinja conditional {% if ... %} ... {% endif %} on the groups of the current host
-   (group_names, a list: use the "in" operator with the group name central_manager).
+{# The [server] section exists ONLY on the central manager: the other nodes run no server. Its single
+   setting, autosign, points to the admission policy script (openvox_autosign_script, group_vars/all.yml).
+   The test uses the groups of the current host (group_names is a list, hence "in").
    A Jinja comment like this one produces no output in the rendered file. #}
 
 {% if 'central_manager' in group_names %}

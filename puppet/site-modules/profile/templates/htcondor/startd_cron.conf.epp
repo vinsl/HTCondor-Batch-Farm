@@ -7,12 +7,12 @@
 # HEALTH is the name of the job; the settings below carry that name in the middle.
 STARTD_CRON_JOBLIST = $(STARTD_CRON_JOBLIST) HEALTH
 
-# TODO(human): the program to run: STARTD_CRON_HEALTH_EXECUTABLE, set to the EPP parameter $script.
+# The program to run: the path of the health check, passed to this template as $script.
 STARTD_CRON_HEALTH_EXECUTABLE = <%= $script %>
 
 # Run it again and again: Periodic mode, every 60 seconds.
 STARTD_CRON_HEALTH_MODE = Periodic
-# TODO(human): the interval setting of the job, STARTD_CRON_HEALTH_PERIOD, 60 seconds written "60s".
+# Interval between two runs: 60 seconds, written 60s (no quotes: HTCondor keeps them as part of the value).
 STARTD_CRON_HEALTH_PERIOD = 60s
 # Without this the startd sends its ad to the collector only every UPDATE_INTERVAL (300 s): a node
 # that becomes sick would stay "healthy" at the central manager for up to 5 minutes. If_Changed sends
@@ -22,5 +22,6 @@ STARTD_CRON_AUTOPUBLISH = If_Changed
 # START is the expression the startd evaluates for every job it is offered. $(START) keeps whatever
 # was already defined. The "=?=" operator is "is identical to": unlike "==", an attribute that does
 # not exist yet (before the first run of the health check) compares as false instead of undefined.
-# TODO(human): accept a job only if the previous START is true AND NODE_IS_HEALTHY =?= True.
+# A job is accepted only if the previous START holds AND the node is healthy. The macro is wrapped in
+# parentheses because it is a text substitution: without them the operator precedence could change.
 START = ($(START)) && (NODE_IS_HEALTHY=?=True) 
