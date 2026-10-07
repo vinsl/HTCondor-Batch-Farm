@@ -51,6 +51,25 @@ node render.mjs                # hero-light.png hero-dark.png linkedin-light.png
 
 The options are listed at the top of `render.mjs`. A software GL is used, so no GPU is needed.
 
+## Flat diagrams
+
+`diagrams.py` draws the four diagrams of the project README in the same visual language (colours of the
+tools, IBM Plex), as SVG in a light and a dark version (`diagrams/<name>-light.svg`, `-dark.svg`). Every figure
+is read from a recording, never typed by hand:
+
+| Diagram | Source |
+|---|---|
+| `admission` | the admission chain; timings measured on `wn-03` in `../demos/scale-out/record.json` |
+| `demo-health-check` | `../demos/health-check/record.json` |
+| `demo-drift` | `../demos/drift-correction/record.json` |
+| `demo-scale-out` | `../demos/scale-out/record.json` |
+
+```bash
+python3 diagrams.py            # rewrites the eight SVG files
+```
+
+The fonts are embedded in each SVG, so the files render the same on GitHub with no external request.
+
 ## Third-party
 
 - three.js r128, MIT License (`vendor/three.r128.min.js`).
