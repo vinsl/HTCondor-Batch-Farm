@@ -40,6 +40,11 @@ python3 docs/lab/demo.py docs/lab/demos/health-check/scenario.toml             #
 
 Each folder holds `scenario.toml` (the steps), `record.json` (everything) and `RECORD.md` (timeline).
 
+## Visuals (to come)
+
+Diagrams and the 3D view of the lab will be stored in `visuals/`, made from the final snapshot and the
+demonstration records. The README marks where each one goes (`VISUAL PLACEHOLDER` comments).
+
 ## Files
 
 - `lablib.py`: shared helpers (Ansible runner, scrubbing of secrets and public IPs, gitleaks scan).
