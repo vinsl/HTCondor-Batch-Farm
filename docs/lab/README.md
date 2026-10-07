@@ -44,7 +44,8 @@ Each folder holds `scenario.toml` (the steps), `record.json` (everything) and `R
 
 `visuals/` holds the 3D model of the lab, built from a snapshot: `index.html` (interactive, self-contained,
 published by GitHub Pages at https://vinsl.github.io/HTCondor-Batch-Farm/docs/lab/visuals/) and the images it
-exports (`hero-*.png` for the README, `linkedin-*.png` for link previews). How it is built and how each part of
+exports (`hero-*.png` for the README, `linkedin-*.png` for link previews), plus the four flat diagrams of the
+README drawn from the demonstration records (`diagrams/`, made by `diagrams.py`). How it is built and how each part of
 the model maps to the snapshot: [`visuals/README.md`](visuals/README.md).
 
 ## Files

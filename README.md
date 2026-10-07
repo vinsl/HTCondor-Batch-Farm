@@ -126,12 +126,10 @@ shares (repository, package, common configuration rendered from EPP, pool key, d
 
 ## How a new machine joins the fleet
 
-<!-- ====================================================================================== -->
-<!-- VISUAL PLACEHOLDER 3 — ADMISSION SEQUENCE                                               -->
-<!-- Sequence diagram of the six steps below (node, Ansible, OpenVox server, collector).     -->
-<!-- Suggested file: docs/lab/visuals/admission.png                                          -->
-<!-- ====================================================================================== -->
-> **Diagram to come:** sequence of the admission chain below.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/lab/visuals/diagrams/admission-dark.svg">
+  <img src="docs/lab/visuals/diagrams/admission-light.svg" width="100%" alt="Sequence diagram of the admission chain: Ansible writes the certificate request attributes, the new machine sends its request, the OpenVox policy script compares the challenge password and signs, the signed certificate carries the role, the agent pulls its catalog for role::execute, and the startd advertises its slot to the HTCondor collector.">
+</picture>
 
 1. Ansible writes `csr_attributes.yaml` on the node: the challenge password (`custom_attributes`, used
    for admission, **not** kept in the certificate) and the role (`extension_requests`, written **into**
@@ -165,9 +163,10 @@ service as drift and starts it; `wn-01` publishes `true` again and the next batc
 
 **11 steps, 1 min 58 s.** Record: [`docs/lab/demos/health-check/RECORD.md`](docs/lab/demos/health-check/RECORD.md)
 
-<!-- VISUAL PLACEHOLDER 4 — HEALTH-CHECK STORY: healthy → sick (jobs only on wn-02) → Puppet repairs → healthy.
-     Data: docs/lab/demos/health-check/record.json. Suggested file: docs/lab/visuals/demo-health-check.png -->
-> **Schematic to come:** the four states of the worker, with the jobs per worker at each stage.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/lab/visuals/diagrams/demo-health-check-dark.svg">
+  <img src="docs/lab/visuals/diagrams/demo-health-check-light.svg" width="100%" alt="Timeline of the self-healing demonstration: chronyd stopped on wn-01, the health check publishes false, eight jobs run only on wn-02, Puppet restarts chronyd, the health check publishes true, and a new batch runs on both workers.">
+</picture>
 
 ### 2. Drift correction
 
@@ -178,9 +177,10 @@ files; a second run changes nothing (exit code 0).
 
 **6 steps, 21 s.** Record: [`docs/lab/demos/drift-correction/RECORD.md`](docs/lab/demos/drift-correction/RECORD.md)
 
-<!-- VISUAL PLACEHOLDER 5 — DRIFT CORRECTION: desired state → three manual changes → noop report → corrected → idempotent.
-     Data: docs/lab/demos/drift-correction/record.json. Suggested file: docs/lab/visuals/demo-drift.png -->
-> **Schematic to come:** the three changes, what the dry run reported, and the corrected state.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/lab/visuals/diagrams/demo-drift-dark.svg">
+  <img src="docs/lab/visuals/diagrams/demo-drift-light.svg" width="100%" alt="Drift correction: three manual changes on wn-01, what the dry run reported, what the real run did and the state after, for the chrony configuration, the SSH hardening file and the firewall.">
+</picture>
 
 ### 3. Zero-touch scale-out
 
@@ -192,9 +192,10 @@ command is typed on the new machine and no certificate is signed by hand.
 **10 steps, 4 min 18 s** (1 min 53 s between the end of the bootstrap and the new slot in the pool).
 Record: [`docs/lab/demos/scale-out/RECORD.md`](docs/lab/demos/scale-out/RECORD.md)
 
-<!-- VISUAL PLACEHOLDER 6 — SCALE-OUT TIMELINE: one line of data → machine → bootstrap → admission → Puppet → slot → jobs.
-     Data: docs/lab/demos/scale-out/record.json. Suggested file: docs/lab/visuals/demo-scale-out.png -->
-> **Schematic to come:** the timeline of the scale-out, from the one-line change to the first job on `wn-03`.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/lab/visuals/diagrams/demo-scale-out-dark.svg">
+  <img src="docs/lab/visuals/diagrams/demo-scale-out-light.svg" width="100%" alt="Gantt chart of the scale-out: OpenTofu plan and apply, boot, Ansible bootstrap, admission and Puppet, certificate check, and jobs running on wn-03, 4 minutes 18 seconds in total.">
+</picture>
 
 ---
 
