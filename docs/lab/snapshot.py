@@ -138,7 +138,8 @@ def git_info() -> dict:
     return {
         "commit": get("git rev-parse --short HEAD"),
         "branch": get("git branch --show-current"),
-        "uncommitted_changes": bool(get("git status --porcelain")),
+        # Only the deployed code counts: evidence written under docs/lab/ is not part of the lab.
+        "uncommitted_changes": bool(get("git status --porcelain -- . ':!docs/lab'")),
     }
 
 

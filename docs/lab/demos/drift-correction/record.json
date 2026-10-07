@@ -1,15 +1,15 @@
 {
   "title": "Puppet detects and reverts manual changes",
   "goal": "Manual changes made on a node by hand are detected as drift and reverted by the next Puppet run, and a further run changes nothing.",
-  "started_at": "2026-10-07T09:30:52+00:00",
-  "git_commit": "6035cb2",
+  "started_at": "2026-10-07T09:47:46+00:00",
+  "git_commit": "86fa7f3",
   "steps": [
     {
       "index": 1,
       "title": "Baseline: wn-01 matches its desired state",
       "why": "A Puppet run on a converged node changes nothing: exit code 0.",
       "started_s": 0.0,
-      "started_at": "2026-10-07T09:30:52+00:00",
+      "started_at": "2026-10-07T09:47:46+00:00",
       "command": {
         "host": "wn-01",
         "become": true,
@@ -19,14 +19,14 @@
         "stderr": ""
       },
       "ok": true,
-      "duration_s": 5.0
+      "duration_s": 4.6
     },
     {
       "index": 2,
       "title": "Three manual changes, as a careless admin would make",
       "why": "Edit the time configuration, delete the SSH hardening file, and stop the firewall.",
-      "started_s": 5.0,
-      "started_at": "2026-10-07T09:30:57+00:00",
+      "started_s": 4.6,
+      "started_at": "2026-10-07T09:47:51+00:00",
       "command": {
         "host": "wn-01",
         "become": true,
@@ -36,14 +36,14 @@
         "stderr": ""
       },
       "ok": true,
-      "duration_s": 1.2
+      "duration_s": 1.1
     },
     {
       "index": 3,
       "title": "Dry run: what Puppet would change",
       "why": "--noop compares the node to its desired state and reports the drift without touching anything (the equivalent of tofu plan).",
-      "started_s": 6.2,
-      "started_at": "2026-10-07T09:30:58+00:00",
+      "started_s": 5.7,
+      "started_at": "2026-10-07T09:47:52+00:00",
       "command": {
         "host": "wn-01",
         "become": true,
@@ -53,14 +53,14 @@
         "stderr": ""
       },
       "ok": true,
-      "duration_s": 5.0
+      "duration_s": 4.3
     },
     {
       "index": 4,
       "title": "Real run: Puppet reverts the drift",
       "why": "Every difference is corrected; the services that depend on a corrected file are refreshed.",
-      "started_s": 11.1,
-      "started_at": "2026-10-07T09:31:03+00:00",
+      "started_s": 10.0,
+      "started_at": "2026-10-07T09:47:56+00:00",
       "command": {
         "host": "wn-01",
         "become": true,
@@ -70,14 +70,14 @@
         "stderr": ""
       },
       "ok": true,
-      "duration_s": 5.5
+      "duration_s": 5.8
     },
     {
       "index": 5,
       "title": "Verify the node is back to its desired state",
       "why": "The hand edit is gone, the hardening file is back, the firewall runs again.",
-      "started_s": 16.7,
-      "started_at": "2026-10-07T09:31:09+00:00",
+      "started_s": 15.8,
+      "started_at": "2026-10-07T09:48:02+00:00",
       "command": {
         "host": "wn-01",
         "become": true,
@@ -93,8 +93,8 @@
       "index": 6,
       "title": "A second run changes nothing",
       "why": "Idempotence: once converged, Puppet does nothing.",
-      "started_s": 17.8,
-      "started_at": "2026-10-07T09:31:10+00:00",
+      "started_s": 17.0,
+      "started_at": "2026-10-07T09:48:03+00:00",
       "command": {
         "host": "wn-01",
         "become": true,
@@ -104,9 +104,9 @@
         "stderr": ""
       },
       "ok": true,
-      "duration_s": 4.6
+      "duration_s": 4.4
     }
   ],
-  "duration_s": 22.4,
+  "duration_s": 21.3,
   "success": true
 }
