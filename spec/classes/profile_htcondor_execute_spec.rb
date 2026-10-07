@@ -18,11 +18,13 @@ describe 'profile::htcondor::execute' do
   it { is_expected.to compile.with_all_deps }
   it { is_expected.to contain_file('/etc/condor/config.d/20-role.conf').with_content(%r{use ROLE: Execute}) }
 
-  # TODO(human): the health check configuration must publish the result through STARTD_CRON and
-  # use it in START. Check that /etc/condor/config.d/40-health.conf has content matching
-  # NODE_IS_HEALTHY (hint: .with_content(/NODE_IS_HEALTHY/)).
+  # The health check configuration publishes the result and uses it in START.
+  it { is_expected.to contain_file('/etc/condor/config.d/40-health.conf').with_content(/NODE_IS_HEALTHY/) }
 
-  # TODO(human): the health check program must be installed BEFORE the configuration that points to
-  # it. Check the relation on the config file: contain_file('/etc/condor/config.d/40-health.conf')
-  # followed by .that_requires('File[/usr/local/libexec/condor/health_check.py]').
+  # The program exists before the configuration that points to it, and condor reloads when it changes.
+  it do
+    is_expected.to contain_file('/etc/condor/config.d/40-health.conf')
+      .that_requires('File[/usr/local/libexec/condor/health_check.py]')
+      .that_notifies('Service[condor]')
+  end
 end

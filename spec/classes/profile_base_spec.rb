@@ -8,12 +8,10 @@ describe 'profile::base' do
     let(:trusted_facts) { { 'pp_role' => 'central_manager' } }
     let(:node) { 'cm-01' }
 
-    # Example (complete): the catalog compiles and the OpenVox port is opened.
+    # The role file replaces the common list: the central manager opens both ports.
     it { is_expected.to compile.with_all_deps }
     it { is_expected.to contain_exec('firewalld-open-8140') }
-
-    # TODO(human): the central manager must also open the HTCondor port 9618.
-    # Hint: same matcher as the line above, with the title of the exec for port 9618.
+    it { is_expected.to contain_exec('firewalld-open-9618') }
   end
 
   context 'on an execute node' do
@@ -22,10 +20,11 @@ describe 'profile::base' do
 
     it { is_expected.to compile.with_all_deps }
 
-    # TODO(human): a worker must NOT open the OpenVox port (it only runs the agent).
-    # Hint: `is_expected.not_to contain_exec(...)`.
+    # A worker only runs the agent: it must not open the OpenVox port (it gets the common list, 9618).
+    it { is_expected.to contain_exec('firewalld-open-9618') }
+    it { is_expected.not_to contain_exec('firewalld-open-8140') }
 
-    # TODO(human): chronyd must restart when /etc/chrony.conf changes. Check the relation on the service:
-    # contain_service('chronyd') followed by .that_subscribes_to('File[...]') with the file reference.
+    # chronyd restarts when its configuration file changes.
+    it { is_expected.to contain_service('chronyd').that_subscribes_to('File[/etc/chrony.conf]') }
   end
 end
