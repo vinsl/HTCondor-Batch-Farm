@@ -15,9 +15,8 @@
   ansible.builtin.lineinfile:
     path: "{{ openvox_server_sysconfig }}"
     regexp: '^JAVA_ARGS='
-    # TODO(human): the line must set the initial (-Xms) AND the maximum (-Xmx) heap to the value of
-    # openvox_server_heap. Keep both equal: the JVM then never has to resize its heap.
-    # Hint: the value of JAVA_ARGS is a quoted string containing both options, e.g. "-Xmx512m ...".
+    # The initial (-Xms) and maximum (-Xmx) heap both take openvox_server_heap. Keeping them equal means
+    # the JVM never has to resize its heap. JAVA_ARGS is one quoted string holding both options.
     line: 'JAVA_ARGS="-Xms{{ openvox_server_heap }} -Xmx{{ openvox_server_heap }}"'
   notify: Restart puppetserver
 
@@ -25,10 +24,8 @@
   ansible.builtin.copy:
     dest: "{{ openvox_autosign_secret_file }}"
     content: "{{ autosign_challenge }}\n"
-    # TODO(human): who must be able to read this file? The policy script runs as the user of the
-    # puppetserver service (user and group "puppet"), not as root. Choose owner, group and mode
-    # so that puppet can read it and nobody else can. Hint: owner root, group puppet, and a mode
-    # that gives read to the group only, as an octal string.
+    # The policy script runs as the user of the puppetserver service (user and group "puppet"), not as
+    # root. Owner root, group puppet and mode 0640 let puppet read the secret and nobody else.
     owner: root
     group: puppet
     mode: "0640"
