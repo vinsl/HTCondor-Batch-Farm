@@ -24,12 +24,16 @@ Scenario format:
     expect = "success"                       # "success" (default), "failure" or "any"
     pause  = 0                               # seconds to wait after the step (default 0)
 
-    [step.wait_until]                        # optional: poll until this command succeeds
+    [step.wait_until]                        # optional: poll until this command succeeds (after `run`)
     host     = "cm-01"
     run      = "condor_status -af NODE_IS_HEALTHY -constraint 'Machine==\"wn-01\"' | grep -q false"
     become   = false
     timeout  = 180                           # seconds (default 300)
     interval = 10                            # seconds between attempts (default 10)
+
+    [step.after_wait]                        # optional: a command run once the wait succeeded; its output
+    host = "cm-01"                           # is what the record shows (use it to display the state the
+    run  = "condor_status"                   # wait was about, instead of a stale output taken before)
 
 A step whose expectation fails stops the demo (the record is still written, marked failed).
 Outputs are scrubbed (known secrets, public IPs) and the record is scanned with gitleaks.
@@ -117,6 +121,17 @@ def run_step(index: int, step: dict, t0: float) -> dict:
             "attempts": attempts,
         }
         record["ok"] = attempts[-1]["rc"] == 0
+    after = step.get("after_wait")
+    if record["ok"] and after:
+        host = after.get("host", "local")
+        result = execute(host, after["run"], after.get("become", False))
+        record["after_wait"] = {
+            "host": host,
+            "become": after.get("become", False),
+            "run": after["run"],
+            **result,
+        }
+        record["ok"] = expectation_met(after.get("expect", "success"), result["rc"])
     if step.get("pause"):
         time.sleep(step["pause"])
     record["duration_s"] = round(time.time() - start, 1)
@@ -180,6 +195,26 @@ def timeline(rec: dict) -> str:
                 "```",
                 "",
             ]
+        after = step.get("after_wait")
+        if after:
+            who = (
+                "workspace"
+                if after["host"] == "local"
+                else after["host"] + (" (root)" if after["become"] else "")
+            )
+            md += [
+                f"Once the condition holds, on **{who}**:",
+                "",
+                "```bash",
+                after["run"],
+                "```",
+                "",
+            ]
+            output = "\n".join(
+                part for part in (after["stdout"], after["stderr"]) if part
+            )
+            if output:
+                md += ["```text", clip(output), "```", ""]
         if not step["ok"]:
             md += [
                 "**This step did not meet its expectation: the demo stopped here.**",

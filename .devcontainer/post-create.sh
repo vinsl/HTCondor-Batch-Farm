@@ -25,7 +25,11 @@ pipx install checkov
 pipx install ruff
 pipx install pytest
 
-# --- Ruby tooling: Bundler only, the Puppet test gems come from the project Gemfile (Phase 4) ---
+# --- Ruby tooling: Bundler, then the Puppet test gems pinned by the project Gemfile ---
 gem install --no-document bundler
+if [ -f Gemfile ]; then
+  bundle config set --local path vendor/bundle
+  bundle install
+fi
 
 echo "post-create done"

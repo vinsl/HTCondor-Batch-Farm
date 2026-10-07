@@ -1,0 +1,27 @@
+{
+  "title": "Scale out: a new worker joins the pool with no manual step",
+  "goal": "Adding one entry to the OpenTofu node map is the only decision: the machine is created, admitted by the autosign policy with the role from its request, configured by Puppet, and takes jobs.",
+  "started_at": "2026-10-07T09:41:26+00:00",
+  "git_commit": "6035cb2",
+  "steps": [
+    {
+      "index": 1,
+      "title": "Baseline: a pool of two workers",
+      "why": "The slots the central manager sees before the change.",
+      "started_s": 0.0,
+      "started_at": "2026-10-07T09:41:26+00:00",
+      "command": {
+        "host": "cm-01",
+        "become": true,
+        "run": "condor_status -af Machine State Cpus; echo; /opt/puppetlabs/bin/puppetserver ca list --all | grep -c '^ *wn-' | sed 's/^/signed workers: /'",
+        "rc": -1,
+        "stdout": "",
+        "stderr": "Task failed: Failed to connect to the host via ssh: ssh: connect to host <public-ip> port 22: Connection timed out"
+      },
+      "ok": false,
+      "duration_s": 14.6
+    }
+  ],
+  "duration_s": 14.6,
+  "success": false
+}

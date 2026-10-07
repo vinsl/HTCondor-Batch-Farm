@@ -1,0 +1,45 @@
+title = "Puppet detects and reverts manual changes"
+goal = "Manual changes made on a node by hand are detected as drift and reverted by the next Puppet run, and a further run changes nothing."
+
+[[step]]
+title = "Baseline: wn-01 matches its desired state"
+why = "A Puppet run on a converged node changes nothing: exit code 0."
+host = "wn-01"
+become = true
+run = "/opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes >/dev/null 2>&1; rc=$?; echo \"puppet exit code: $rc (0 = nothing to change)\"; test $rc -eq 0"
+
+[[step]]
+title = "Three manual changes, as a careless admin would make"
+why = "Edit the time configuration, delete the SSH hardening file, and stop the firewall."
+host = "wn-01"
+become = true
+run = "echo '# edited by hand' >> /etc/chrony.conf; rm -f /etc/ssh/sshd_config.d/60-hardening.conf; systemctl stop firewalld; echo \"chrony.conf hand-edited: $(grep -c 'edited by hand' /etc/chrony.conf) line\"; echo \"hardening file present: $(test -f /etc/ssh/sshd_config.d/60-hardening.conf && echo yes || echo no)\"; echo \"firewalld: $(systemctl is-active firewalld)\""
+
+[[step]]
+title = "Dry run: what Puppet would change"
+why = "--noop compares the node to its desired state and reports the drift without touching anything (the equivalent of tofu plan)."
+host = "wn-01"
+become = true
+run = "/opt/puppetlabs/bin/puppet agent -t --noop >/tmp/noop.log 2>&1; sed 's/\\x1b\\[[0-9;]*m//g' /tmp/noop.log | grep -E '^Notice: /Stage' | cut -c1-150"
+expect = "any"
+
+[[step]]
+title = "Real run: Puppet reverts the drift"
+why = "Every difference is corrected; the services that depend on a corrected file are refreshed."
+host = "wn-01"
+become = true
+run = "/opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes >/tmp/run.log 2>&1; rc=$?; sed 's/\\x1b\\[[0-9;]*m//g' /tmp/run.log | grep -E '^Notice: /Stage' | cut -c1-150; echo \"puppet exit code: $rc (2 = changes applied)\"; test $rc -eq 2"
+
+[[step]]
+title = "Verify the node is back to its desired state"
+why = "The hand edit is gone, the hardening file is back, the firewall runs again."
+host = "wn-01"
+become = true
+run = "test $(grep -c 'edited by hand' /etc/chrony.conf) -eq 0 && echo 'chrony.conf: hand edit gone'; test -f /etc/ssh/sshd_config.d/60-hardening.conf && echo 'sshd hardening file: back'; echo \"firewalld: $(systemctl is-active firewalld)\"; test \"$(systemctl is-active firewalld)\" = active"
+
+[[step]]
+title = "A second run changes nothing"
+why = "Idempotence: once converged, Puppet does nothing."
+host = "wn-01"
+become = true
+run = "/opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes >/dev/null 2>&1; rc=$?; echo \"puppet exit code: $rc (0 = nothing to change)\"; test $rc -eq 0"

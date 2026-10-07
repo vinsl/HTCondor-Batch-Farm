@@ -69,3 +69,11 @@
     name: "{{ openvox_server_service }}"
     state: started
     enabled: true
+
+# The service is "started" as soon as systemd launches the JVM, but the server only listens on 8140 one
+# or two minutes later. Agents started right after (the handler of openvox_bootstrap) would get
+# "Connection refused" and then wait a whole run interval (30 min) before trying again.
+- name: Wait until puppetserver accepts agent connections
+  ansible.builtin.wait_for:
+    port: 8140
+    timeout: 300

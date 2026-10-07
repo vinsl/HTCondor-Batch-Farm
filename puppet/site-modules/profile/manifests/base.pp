@@ -4,12 +4,11 @@
 # Parameters get their value from Hiera automatically (lookup of profile::base::<parameter>),
 # otherwise from the default written here.
 class profile::base (
-  # Example (complete): the base packages. Type, name, default value.
-  Array[String] $packages = ['vim-enhanced', 'bind-utils', 'lsof'],
-
+  # Required parameters first (no default: Hiera must provide them, see data/common.yaml), then the
+  # optional ones. puppet-lint enforces this order.
   Array[Integer] $firewall_ports,
   String $ntp_pool,
-
+  Array[String] $packages = ['vim-enhanced', 'bind-utils', 'lsof'],
 ) {
   # --- Base packages (an array as title creates one resource per element) -------------------
   package { $packages:
@@ -33,8 +32,8 @@ class profile::base (
   }
 
   service { 'chronyd':
-    ensure => running,
-    enable => true,
+    ensure    => running,
+    enable    => true,
     subscribe => File['/etc/chrony.conf'],
   }
 
