@@ -40,10 +40,12 @@ python3 docs/lab/demo.py docs/lab/demos/health-check/scenario.toml             #
 
 Each folder holds `scenario.toml` (the steps), `record.json` (everything) and `RECORD.md` (timeline).
 
-## Visuals (to come)
+## Visuals
 
-Diagrams and the 3D view of the lab will be stored in `visuals/`, made from the final snapshot and the
-demonstration records. The README marks where each one goes (`VISUAL PLACEHOLDER` comments).
+`visuals/` holds the 3D model of the lab, built from a snapshot: `index.html` (interactive, self-contained,
+published by GitHub Pages at https://vinsl.github.io/HTCondor-Batch-Farm/docs/lab/visuals/) and the images it
+exports (`hero-*.png` for the README, `linkedin-*.png` for link previews). How it is built and how each part of
+the model maps to the snapshot: [`visuals/README.md`](visuals/README.md).
 
 ## Files
 

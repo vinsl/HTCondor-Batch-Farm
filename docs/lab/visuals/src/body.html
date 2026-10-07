@@ -1,0 +1,54 @@
+<div class="app" id="app" data-inspector="closed">
+  <div class="stage" id="stage" tabindex="0" role="application" aria-label="3D model of the lab. Drag to orbit, scroll to zoom, arrow keys to rotate, plus and minus to zoom.">
+    <canvas id="gl"></canvas>
+    <canvas id="ov"></canvas>
+    <div class="tip" id="tip" hidden></div>
+    <p class="hint" id="hint">Drag to orbit, scroll to zoom, right-drag to pan. Click anything for its details.</p>
+    <p class="fallback" id="fallback" hidden></p>
+  </div>
+
+  <div class="left">
+    <header class="masthead">
+      <p class="eyebrow" id="eyebrow">Lab snapshot</p>
+      <h1 id="title">HTCondor Batch Farm as Code</h1>
+      <p class="meta" id="meta"></p>
+      <ul class="facts" id="facts" aria-label="State at capture"></ul>
+    </header>
+    <ul class="legend" id="legend" aria-label="Traffic flows, click to show or hide"></ul>
+  </div>
+
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="View">
+    <button type="button" id="btn-details" aria-pressed="false">Details</button>
+    <button type="button" id="btn-explode" aria-pressed="false">Explode</button>
+    <button type="button" id="btn-labels">Labels: main</button>
+    <button type="button" id="btn-rotate" aria-pressed="false">Rotate</button>
+    <button type="button" id="btn-reset">Reset view</button>
+    <button type="button" id="btn-theme">Dark</button>
+    <div class="menu">
+      <button type="button" id="btn-export" aria-haspopup="true" aria-expanded="false">Export PNG</button>
+      <div class="menu-list" id="export-menu" hidden>
+        <button type="button" data-export="readme">README hero <span>2400 × 1350</span></button>
+        <button type="button" data-export="linkedin">LinkedIn <span>2400 × 1256</span></button>
+        <button type="button" data-export="square">Square <span>2160 × 2160</span></button>
+        <button type="button" data-export="current">This view <span>as framed now</span></button>
+      </div>
+    </div>
+    <label class="filebtn" for="file-snapshot">Open snapshot<input type="file" id="file-snapshot" accept="application/json,.json"></label>
+  </div>
+
+  <aside class="inspector" id="inspector" aria-label="Details"></aside>
+
+  <section class="dock" aria-label="How it works">
+    <div class="caption" id="caption" aria-live="polite"></div>
+    <nav class="steps" id="steps" aria-label="Steps"></nav>
+  </section>
+
+  <div class="modal" id="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header><h2 id="modal-title">Exported image</h2><button type="button" class="icon" id="modal-close" aria-label="Close">×</button></header>
+      <p id="modal-note"></p>
+      <div class="modal-img"><img id="modal-img" alt="Exported view of the lab"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+</div>

@@ -14,12 +14,18 @@ unhealthy removes itself from the pool, and comes back once Puppet has repaired 
 
 The whole lab is destroyed after every session and rebuilt from nothing in about fifteen minutes.
 
-<!-- ====================================================================================== -->
-<!-- VISUAL PLACEHOLDER 1 — HERO IMAGE                                                       -->
-<!-- 3D render of the final lab, made from docs/lab/snapshots/03-final/snapshot.json.        -->
-<!-- Suggested file: docs/lab/visuals/hero.png  (replace this block with the image tag)     -->
-<!-- ====================================================================================== -->
-> **Visual to come:** 3D view of the final lab (three machines, their roles, the two traffic flows).
+<a href="https://vinsl.github.io/HTCondor-Batch-Farm/docs/lab/visuals/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/lab/visuals/hero-dark.png">
+    <img src="docs/lab/visuals/hero-light.png" width="100%"
+         alt="3D view of the final lab: the workspace with OpenTofu and Ansible, the AWS region, VPC and public subnet, the security group around cm-01, wn-01 and wn-02, the OpenVox and HTCondor flows on ports 8140 and 9618, the jobs completed by each worker, and the removed scale-out worker wn-03.">
+  </picture>
+</a>
+
+<p align="center"><sub>
+The final lab, drawn from <a href="docs/lab/snapshots/03-final/SUMMARY.md">snapshot 03-final</a>: every machine, port, flow and job count in the image is read from the capture.
+<b><a href="https://vinsl.github.io/HTCondor-Batch-Farm/docs/lab/visuals/">Open the interactive 3D model</a></b> to orbit around it, click any part for its details, or replay the six steps of the build.
+</sub></p>
 
 ---
 
@@ -71,13 +77,13 @@ an agent can talk to its server; from then on, every change goes through the Pup
 
 ## Architecture
 
-<!-- ====================================================================================== -->
-<!-- VISUAL PLACEHOLDER 2 — ARCHITECTURE DIAGRAM                                             -->
-<!-- Source of truth: docs/lab/snapshots/03-final/SUMMARY.md (machines, ports, services).    -->
-<!-- Suggested file: docs/lab/visuals/architecture.png                                       -->
-<!-- ====================================================================================== -->
-> **Diagram to come:** the workspace, the AWS network, the three machines and the two flows
-> (configuration on port 8140, jobs and slot advertisements on port 9618).
+**Reading the image at the top.** From the bottom: the workspace runs OpenTofu (purple, through the AWS
+API) and Ansible (red, SSH on port 22). Inside the region, the VPC and the public subnet are stacked slabs; the
+glass fence is the security group. Each machine is built layer by layer, in the order the tools install it:
+instance, AlmaLinux, OpenVox agent, `profile::base`, `profile::htcondor`, then the daemons of its role. The amber
+module on `cm-01` is the OpenVox server. Arcs in the air are the two flows allowed only between members of the
+security group: OpenVox catalogs on 8140 (amber) and HTCondor on 9618 (teal). Cubes beside a worker are the jobs it
+completed, and the dashed outline is `wn-03`, the worker of the scale-out demonstration.
 
 ```text
 Workspace (GitHub Codespace)
@@ -297,7 +303,7 @@ If SSH times out at the start of a session, the workspace's public address has c
 | [`jobs/`](jobs/) | Sample HTCondor jobs (a short job, 20 Monte Carlo jobs, a batch of 8, and one that can never run) |
 | [`spec/`](spec/), [`tests/`](tests/) | `rspec-puppet` tests of the profiles; Pytest tests of the health check |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 13 design decisions: context, decision, rejected alternative, what changes at scale |
-| [`docs/lab/`](docs/lab/README.md) | Recording tools, demonstration records and infrastructure snapshots |
+| [`docs/lab/`](docs/lab/README.md) | Recording tools, demonstration records, infrastructure snapshots and the 3D model of the lab (`visuals/`) |
 | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Continuous integration |
 
 ---
